@@ -2,5 +2,5 @@ node_modules/
 
 .vscode/
 
-dist/
+dist/*
 !dist/events.min.js
