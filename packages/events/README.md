@@ -49,3 +49,8 @@ function handler(event) {
 
 register('eventname', handler)
 ```
+
+Then in your markup add the following:
+```html
+<button on:click="eventname">Click me</button>
+```
