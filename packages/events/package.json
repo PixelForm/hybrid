@@ -1,4 +1,12 @@
 {
-    "name": "@hybrid/events",
-    "version": "0.0.0"
+  "name": "@pixelform/events",
+  "version": "0.0.0",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "pixelform",
+  "license": "MIT",
+  "description": ""
 }
