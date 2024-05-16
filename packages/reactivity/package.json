@@ -1,12 +1,24 @@
 {
-  "name": "@pixelform/reactivity",
-  "version": "0.0.0",
-  "main": "src/index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "keywords": [],
-  "author": "pixelform",
-  "license": "MIT",
-  "description": ""
+	"name": "@pixelform/reactivity",
+	"version": "0.0.0",
+	"main": "dist/reactivity.cjs.js",
+	"module": "dist/reactivity.esm.js",
+	"browser": "dist/reactivity.min.js",
+	"scripts": {
+		"build": "rollup -c",
+		"format": "prettier -w ."
+	},
+	"keywords": ["reactivity", "reactive"],
+	"author": "pixelform",
+	"license": "MIT",
+	"description": "",
+	"devDependencies": {
+		"@rollup/plugin-node-resolve": "^15.2.3",
+		"@rollup/plugin-terser": "^0.4.4",
+		"prettier": "^3.2.5",
+		"rollup": "^4.17.2"
+	},
+	"files": [
+		"dist"
+	]
 }
