@@ -1,3 +1,5 @@
+import { equal } from './equal'
+
 let context = []
 
 export function state(value) {
@@ -5,17 +7,19 @@ export function state(value) {
 
 	function invalidate(new_value) {
 		if (!new_value) {
-			const _effect_ = context[context.length - 1]
-			if (_effect_) subscriptions.add(_effect_)
+			const effect = context[context.length - 1]
+			if (effect) subscriptions.add(effect)
 			return value
 		}
 
 		if (typeof new_value === 'function') {
-			value = new_value(value)
-		} else {
-			value = new_value
+			new_value = new_value(value)
 		}
 
+        if(!equal(new_value)) return
+        
+        value = new_value
+        
 		for (const subscription of [...subscriptions]) {
 			subscription()
 		}
