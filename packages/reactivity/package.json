@@ -1,6 +1,6 @@
 {
 	"name": "@pixelform/reactivity",
-	"version": "0.0.0",
+	"version": "0.1.0",
 	"main": "dist/reactivity.cjs.js",
 	"module": "dist/reactivity.esm.js",
 	"browser": "dist/reactivity.min.js",
@@ -13,6 +13,10 @@
 		"reactive"
 	],
 	"author": "pixelform",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/pixelform/hybrid/tree/main/packages/reactivity"
+    },
 	"license": "MIT",
 	"description": "",
 	"devDependencies": {
