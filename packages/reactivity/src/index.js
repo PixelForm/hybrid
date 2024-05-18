@@ -16,10 +16,10 @@ export function state(value) {
 			new_value = new_value(value)
 		}
 
-        if(!equal(new_value)) return
-        
-        value = new_value
-        
+		if (equal(value, new_value)) return
+
+		value = new_value
+
 		for (const subscription of [...subscriptions]) {
 			subscription()
 		}
