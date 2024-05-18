@@ -8,7 +8,10 @@
 		"build": "rollup -c",
 		"format": "prettier -w ."
 	},
-	"keywords": ["reactivity", "reactive"],
+	"keywords": [
+		"reactivity",
+		"reactive"
+	],
 	"author": "pixelform",
 	"license": "MIT",
 	"description": "",
