@@ -1,5 +1,5 @@
 export function equal(a, b) {
-    const self = equal
+	const self = equal
 
 	if (a === b || (a !== a && b !== b)) {
 		return true
