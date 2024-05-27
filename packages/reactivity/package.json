@@ -13,17 +13,19 @@
 		"reactive"
 	],
 	"author": "pixelform",
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/pixelform/hybrid/tree/main/packages/reactivity"
-    },
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/pixelform/hybrid/tree/main/packages/reactivity"
+	},
 	"license": "MIT",
 	"description": "",
 	"devDependencies": {
 		"@rollup/plugin-node-resolve": "^15.2.3",
 		"@rollup/plugin-terser": "^0.4.4",
+		"@types/node": "^20.12.12",
 		"prettier": "^3.2.5",
-		"rollup": "^4.17.2"
+		"rollup": "^4.17.2",
+		"typescript": "^5.4.5"
 	},
 	"files": [
 		"dist"
