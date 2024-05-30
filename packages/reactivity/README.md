@@ -30,7 +30,7 @@ count(count => count + 1)
 count(count() + 1)
 
 effect(() => {
-	console.log(count())
+    console.log(count())
 })
 ```
 
@@ -45,8 +45,8 @@ const doubled = () => count() * 2
 count(count => count + 1)
 
 effect(() => {
-	console.log(count()) // logs 0 and then 1
-	console.log(doubled()) // logs 0 and then 2
+    console.log(count()) // logs 0 and then 1
+    console.log(doubled()) // logs 0 and then 2
 })
 ```
 
@@ -66,13 +66,13 @@ And import it where you need it:
 import { count } from './stores'
 
 effect(() => {
-	console.log(count()) // logs 0
+    console.log(count()) // logs 0
 })
 ```
 
 ## TODO
 
-- Add better equality checking
-- Testing
-- Benchmarking
-- Typescript
+-   Add better equality checking
+-   Testing
+-   Benchmarking
+-   Typescript

@@ -1,5 +1,5 @@
 {
-	"compilerOptions": {
+    "compilerOptions": {
         "module": "es2022",
         "target": "es2016",
         "esModuleInterop": true,
@@ -8,5 +8,5 @@
         "strict": true,
         "skipLibCheck": true
     },
-	"include": ["src/**/*"]
+    "include": ["src/**/*"]
 }

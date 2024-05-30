@@ -1,35 +1,35 @@
 {
-	"name": "@pixelform/reactivity",
-	"version": "0.2.0",
-	"main": "dist/index.js",
-	"module": "dist/index.mjs",
-	"types": "dist/index.d.ts",
-	"scripts": {
-		"build": "rimraf dist && rollup -c",
-		"format": "prettier -w ."
-	},
-	"keywords": [
-		"reactivity",
-		"reactive"
-	],
-	"author": "pixelform",
-	"repository": {
-		"type": "git",
-		"url": "https://github.com/pixelform/hybrid/tree/main/packages/reactivity"
-	},
-	"license": "MIT",
-	"description": "",
-	"devDependencies": {
-		"@rollup/plugin-terser": "^0.4.4",
-		"@rollup/plugin-typescript": "^11.1.6",
-		"@types/node": "^20.12.12",
-		"prettier": "^3.2.5",
-		"rimraf": "^5.0.7",
-		"rollup": "^4.17.2",
-		"rollup-plugin-dts": "^6.1.1",
-		"tslib": "^2.6.2"
-	},
-	"files": [
-		"dist"
-	]
+    "name": "@pixelform/reactivity",
+    "version": "0.2.0",
+    "main": "dist/index.js",
+    "module": "dist/index.mjs",
+    "types": "dist/index.d.ts",
+    "scripts": {
+        "build": "rimraf dist && rollup -c",
+        "format": "prettier -w ."
+    },
+    "keywords": [
+        "reactivity",
+        "reactive"
+    ],
+    "author": "pixelform",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/pixelform/hybrid/tree/main/packages/reactivity"
+    },
+    "license": "MIT",
+    "description": "",
+    "devDependencies": {
+        "@rollup/plugin-terser": "^0.4.4",
+        "@rollup/plugin-typescript": "^11.1.6",
+        "@types/node": "^20.12.12",
+        "prettier": "^3.2.5",
+        "rimraf": "^5.0.7",
+        "rollup": "^4.17.2",
+        "rollup-plugin-dts": "^6.1.1",
+        "tslib": "^2.6.2"
+    },
+    "files": [
+        "dist"
+    ]
 }
