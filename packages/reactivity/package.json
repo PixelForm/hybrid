@@ -1,9 +1,9 @@
 {
 	"name": "@pixelform/reactivity",
 	"version": "0.1.0",
-	"main": "dist/reactivity.cjs.js",
-	"module": "dist/reactivity.esm.js",
-	"browser": "dist/reactivity.min.js",
+	"main": "dist/index.js",
+	"module": "dist/index.mjs",
+	"types": "dist/index.d.ts",
 	"scripts": {
 		"build": "rollup -c",
 		"format": "prettier -w ."
@@ -20,14 +20,16 @@
 	"license": "MIT",
 	"description": "",
 	"devDependencies": {
-		"@rollup/plugin-node-resolve": "^15.2.3",
-		"@rollup/plugin-terser": "^0.4.4",
+		"@rollup/plugin-typescript": "^11.1.6",
 		"@types/node": "^20.12.12",
 		"prettier": "^3.2.5",
 		"rollup": "^4.17.2",
+		"rollup-plugin-dts": "^6.1.1",
+		"tslib": "^2.6.2",
 		"typescript": "^5.4.5"
 	},
 	"files": [
+		"index.js",
 		"dist"
 	]
 }
