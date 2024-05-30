@@ -18,6 +18,11 @@ does not come with a memo method. Perhaps if it's really needed I might add it i
 npm install @pixelform/reactivity
 ```
 
+Or:
+```
+pnpm add @pixelform/reactivity
+```
+
 ### Basic usage
 
 ```javascript
@@ -45,8 +50,8 @@ const doubled = () => count() * 2
 count(count => count + 1)
 
 effect(() => {
-    console.log(count()) // logs 0 and then 1
-    console.log(doubled()) // logs 0 and then 2
+    console.log(count()) // logs 1
+    console.log(doubled()) // logs 2
 })
 ```
 
@@ -70,9 +75,10 @@ effect(() => {
 })
 ```
 
-## TODO
+## Collaboration
+Collaboration is welcome! If you have any suggestion or feature etc make sure to test it well and create a PR.
 
--   Add better equality checking
--   Testing
--   Benchmarking
--   Typescript
+If you're not sure what exactly to add or ajust choose any of the TODOs:
+- Building tests
+- Building benchamrks
+- Documentation website
