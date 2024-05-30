@@ -1,3 +1,9 @@
+/**
+ * Checks if the provided values are equal.
+ * @param {any} a The first value to check.
+ * @param {any} b The second value to check.
+ * @returns {boolean} Returns true if both values are equal and false otherwise.
+ */
 export function equal(a, b) {
 	const self = equal
 
