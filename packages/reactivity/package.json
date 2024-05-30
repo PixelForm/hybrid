@@ -5,7 +5,7 @@
 	"module": "dist/index.mjs",
 	"types": "dist/index.d.ts",
 	"scripts": {
-		"build": "rollup -c",
+		"build": "rimraf dist && rollup -c",
 		"format": "prettier -w ."
 	},
 	"keywords": [
@@ -20,13 +20,14 @@
 	"license": "MIT",
 	"description": "",
 	"devDependencies": {
+		"@rollup/plugin-terser": "^0.4.4",
 		"@rollup/plugin-typescript": "^11.1.6",
 		"@types/node": "^20.12.12",
 		"prettier": "^3.2.5",
+		"rimraf": "^5.0.7",
 		"rollup": "^4.17.2",
 		"rollup-plugin-dts": "^6.1.1",
-		"tslib": "^2.6.2",
-		"typescript": "^5.4.5"
+		"tslib": "^2.6.2"
 	},
 	"files": [
 		"dist"
