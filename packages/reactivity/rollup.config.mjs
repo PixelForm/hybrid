@@ -11,11 +11,11 @@ export default [
 			{ file: pkg.main, format: 'cjs', sourcemap: true },
 			{ file: pkg.module, format: 'es', sourcemap: true },
 		],
-        plugins: [typescript()]
-    },
-    {
-        input: 'src/index.d.ts',
-        output: { file: pkg.types, format: 'es' },
-        plugins: [dts()]
-    }
+		plugins: [typescript()],
+	},
+	{
+		input: 'src/index.d.ts',
+		output: { file: pkg.types, format: 'es' },
+		plugins: [dts()],
+	},
 ]
