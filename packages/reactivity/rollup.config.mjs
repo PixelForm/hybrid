@@ -1,17 +1,18 @@
 import typescript from '@rollup/plugin-typescript'
 import { dts } from 'rollup-plugin-dts'
+import terser from '@rollup/plugin-terser'
 import { readFile } from 'node:fs/promises'
 
 const pkg = JSON.parse(await readFile('package.json'))
 
 export default [
 	{
-		input: 'src/index.ts',
+		input: 'src/index.js',
 		output: [
-			{ file: pkg.main, format: 'cjs', sourcemap: true },
-			{ file: pkg.module, format: 'es', sourcemap: true },
+			{ file: pkg.main, format: 'cjs' },
+			{ file: pkg.module, format: 'es' },
 		],
-		plugins: [typescript()],
+		plugins: [typescript({ tsconfig: 'jsconfig.json' }), terser()],
 	},
 	{
 		input: 'src/index.d.ts',
