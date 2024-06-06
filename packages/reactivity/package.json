@@ -6,7 +6,9 @@
     "types": "dist/index.d.ts",
     "scripts": {
         "build": "rimraf dist && rollup -c",
-        "format": "prettier -w ."
+        "prepublishOnly": "npm run build && npm run test",
+        "format": "prettier -w .",
+        "test": "npx jest"
     },
     "keywords": [
         "reactivity",
@@ -22,12 +24,14 @@
     "devDependencies": {
         "@rollup/plugin-terser": "^0.4.4",
         "@rollup/plugin-typescript": "^11.1.6",
-        "@types/node": "^20.12.12",
-        "prettier": "^3.2.5",
+        "@types/jest": "^29.5.12",
+        "@types/node": "^20.14.2",
+        "jest": "^29.7.0",
+        "prettier": "^3.3.1",
         "rimraf": "^5.0.7",
-        "rollup": "^4.17.2",
-        "rollup-plugin-dts": "^6.1.1",
-        "tslib": "^2.6.2"
+        "rollup": "^4.18.0",
+        "ts-jest": "^29.1.4",
+        "tslib": "^2.6.3"
     },
     "files": [
         "dist"
