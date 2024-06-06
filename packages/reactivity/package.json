@@ -1,6 +1,6 @@
 {
     "name": "@pixelform/reactivity",
-    "version": "0.2.0",
+    "version": "0.3.0",
     "main": "dist/index.js",
     "module": "dist/index.mjs",
     "types": "dist/index.d.ts",
@@ -22,7 +22,7 @@
         "directory": "packages/reactivity"
     },
     "license": "MIT",
-    "description": "",
+    "description": "Add reactive state to your application with ease.",
     "devDependencies": {
         "@rollup/plugin-typescript": "^11.1.6",
         "@types/jest": "^29.5.12",
