@@ -11,6 +11,17 @@ export default [
             { file: pkg.main, format: 'cjs', sourcemap: true },
             { file: pkg.module, format: 'es', sourcemap: true },
         ],
-        plugins: [typescript(), terser()],
-    }
+        plugins: [
+            typescript(),
+            terser({
+                compress: {
+                    passes: 3,
+                    module: true,
+                    arguments: true,
+                    keep_fargs: false,
+                    unsafe_arrows: true,
+                },
+            }),
+        ],
+    },
 ]
