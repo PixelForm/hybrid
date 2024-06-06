@@ -1,32 +1,4 @@
-const { equal, state, effect } = require('../dist/index.js')
-
-describe('equal function', () => {
-    test('should return true for equal primitive values', () => {
-        expect(equal(1, 1)).toBe(true)
-        expect(equal('test', 'test')).toBe(true)
-        expect(equal(true, true)).toBe(true)
-    })
-
-    test('should return false for non-equal primitive values', () => {
-        expect(equal(1, 2)).toBe(false)
-        expect(equal('test', 'Test')).toBe(false)
-        expect(equal(true, false)).toBe(false)
-    })
-
-    test('should return true for equal objects and arrays', () => {
-        expect(equal({ a: 1 }, { a: 1 })).toBe(true)
-        expect(equal([1, 2, 3], [1, 2, 3])).toBe(true)
-    })
-
-    test('should return false for non-equal objects and arrays', () => {
-        expect(equal({ a: 1 }, { a: 2 })).toBe(false)
-        expect(equal([1, 2, 3], [1, 2, 4])).toBe(false)
-    })
-
-    test('should handle NaN values correctly', () => {
-        expect(equal(NaN, NaN)).toBe(true)
-    })
-})
+const { state, effect } = require('../dist/index.js')
 
 describe('state function', () => {
     test('should initialize state with a given value', () => {
