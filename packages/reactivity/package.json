@@ -7,6 +7,7 @@
     "scripts": {
         "build": "rimraf dist && rollup -c",
         "prepublishOnly": "npm run build && npm run test",
+        "lint": "prettier --check .",
         "format": "prettier -w .",
         "test": "npx jest"
     },
@@ -17,12 +18,12 @@
     "author": "pixelform",
     "repository": {
         "type": "git",
-        "url": "https://github.com/pixelform/hybrid/tree/main/packages/reactivity"
+        "url": "https://github.com/PixelForm/hybrid",
+        "directory": "packages/reactivity"
     },
     "license": "MIT",
     "description": "",
     "devDependencies": {
-        "@rollup/plugin-terser": "^0.4.4",
         "@rollup/plugin-typescript": "^11.1.6",
         "@types/jest": "^29.5.12",
         "@types/node": "^20.14.2",
