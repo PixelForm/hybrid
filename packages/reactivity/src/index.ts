@@ -40,7 +40,7 @@ let stack: Noop[] = []
  * equal([1, 2, 3], [1, 2, 3]); // true
  * equal(1, '1'); // false
  */
-export function equal(a: any, b: any): boolean {
+function equal(a: any, b: any): boolean {
     const self = equal
 
     if (a === b || (a !== a && b !== b)) {
