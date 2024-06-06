@@ -5,7 +5,7 @@ With a very simple api this package is very lightweight and easy to use.
 Just import it's methods and have reactivity anywhere! As you may notice this module does not use stores. This is because I think stores are very unnecessary as stores are simply state that's accessed globally. Also this module
 does not come with a memo method. Perhaps if it's really needed I might add it in the future, so far a memo is just as simple as a function that returns a computed state value. This is also how you create derived state.
 
-## Features
+### Features
 
 1. State anywhere! ✨
 2. No stores or complex state management
@@ -14,16 +14,17 @@ does not come with a memo method. Perhaps if it's really needed I might add it i
 
 ## Installation
 
-```
+```sh
 npm install @pixelform/reactivity
 ```
 
 Or:
-```
+
+```sh
 pnpm add @pixelform/reactivity
 ```
 
-### Basic usage
+## Basic usage
 
 ```javascript
 import { state, effect } from '@pixelform/reactivity'
@@ -75,10 +76,17 @@ effect(() => {
 })
 ```
 
-## Collaboration
-Collaboration is welcome! If you have any suggestion or feature etc make sure to test it well and create a PR.
+## Contributing
+Contributions are welcome! Please follow these steps to contribute:
 
-If you're not sure what exactly to add or ajust choose any of the TODOs:
-- Building tests
-- Building benchamrks
-- Documentation website
+1. Fork the repository.
+2. Create a new branch for your feature or bugfix.
+3. Commit your changes with a descriptive message.
+4. Push your changes to your forked repository.
+5. Open a pull request to the main repository.
+
+_Please make sure to write tests for your changes and run the existing test suite with npm test before submitting your pull request._
+
+## License
+This project is licensed under the MIT License.
+See the [LICENSE](https://github.com/PixelForm/hybrid/blob/main/LICENSE.md) file for more details.
