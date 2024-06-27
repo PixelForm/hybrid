@@ -13,7 +13,9 @@
     },
     "keywords": [
         "reactivity",
-        "reactive"
+        "reactive",
+        "state",
+        "store"
     ],
     "author": "pixelform",
     "repository": {
