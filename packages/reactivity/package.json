@@ -3,6 +3,7 @@
     "version": "0.3.0",
     "main": "dist/index.js",
     "module": "dist/index.mjs",
+    "unpkg": "dist/production.min.js",
     "types": "dist/index.d.ts",
     "scripts": {
         "build": "rimraf dist && rollup -c",
@@ -26,6 +27,7 @@
     "license": "MIT",
     "description": "Add reactive state to your application with ease.",
     "devDependencies": {
+        "@rollup/plugin-terser": "^0.4.4",
         "@rollup/plugin-typescript": "^11.1.6",
         "@types/jest": "^29.5.12",
         "@types/node": "^20.14.2",
