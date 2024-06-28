@@ -77,6 +77,7 @@ effect(() => {
 ```
 
 ## Contributing
+
 Contributions are welcome! Please follow these steps to contribute:
 
 1. Fork the repository.
@@ -88,5 +89,6 @@ Contributions are welcome! Please follow these steps to contribute:
 _Please make sure to write tests for your changes and run the existing test suite with npm test before submitting your pull request._
 
 ## License
+
 This project is licensed under the MIT License.
 See the [LICENSE](https://github.com/PixelForm/hybrid/blob/main/LICENSE.md) file for more details.
