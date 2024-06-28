@@ -102,24 +102,24 @@ function equal(a: any, b: any): boolean {
  *
  * console.log(count()); // 1
  */
-export function state<T>(value: T): <U extends T>(new_value: U | undefined) => T | undefined {
+export function state<T>(value: T): <U extends T>(new_value?: U) => T | undefined {
     const subscriptions: Set<Noop> = new Set()
 
-    function invalidate<U extends T>(new_value: U | undefined): T | undefined {
+    function invalidate<U extends T>(new_value?: U): T | undefined {
         if (!new_value) {
             const effect = stack[stack.length - 1]
             if (effect) subscriptions.add(effect)
             return value
         }
-
+        
         if (typeof new_value === 'function') {
             new_value = new_value(value)
         }
-
+        
         if (equal(value, new_value)) return value
-
-        value = new_value
-
+        
+        value = new_value as T
+        
         for (const subscription of [...subscriptions]) {
             subscription()
         }
