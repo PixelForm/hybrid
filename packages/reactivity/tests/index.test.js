@@ -6,6 +6,16 @@ describe('state function', () => {
         expect(count()).toBe(0)
     })
 
+    test('should treat null as a valid state value', () => {
+        const nullState = state(null)
+        expect(nullState()).toBe(null)
+    })
+
+    test('should treat undefined as a valid state value', () => {
+        const undefinedState = state(undefined)
+        expect(undefinedState()).toBeUndefined()
+    })
+
     test('should update state and notify subscribers', () => {
         const count = state(0)
         const mockEffect = jest.fn()
