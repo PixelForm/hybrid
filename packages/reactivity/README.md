@@ -5,12 +5,21 @@ With a very simple api this package is very lightweight and easy to use.
 Just import it's methods and have reactivity anywhere! As you may notice this module does not use stores. This is because I think stores are very unnecessary as stores are simply state that's accessed globally. Also this module
 does not come with a memo method. Perhaps if it's really needed I might add it in the future, so far a memo is just as simple as a function that returns a computed state value. This is also how you create derived state.
 
+### Roadmap
+1. Drop in solutions for modern frameworks: React, Vue, Svelte. (other javascript frameworks on request)
+2. Drop in solutions for PHP and C# .NET (other frameworks on request)
+3. State/Store library
+4. Proxy based state for enhanced developer experience.
+5. Smarter state protocol for checking what actually changed and returning those values.
+
 ### Features
 
 1. State anywhere! ✨
 2. No stores or complex state management
 3. No unsubscribe problems and recursive effects
 4. Simple and lightweight
+5. Platform/Framework independent, run in NodeJs, Browser, PHP, C# .NET etc
+6. No rendering library! (Bring your very own like jQuery or vanilla javascript)
 
 ## Installation
 
