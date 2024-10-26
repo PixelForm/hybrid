@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-import { equal } from './equality'
+import { equal } from './shared'
 
 type Noop = () => void
 
@@ -42,7 +42,7 @@ let stack: Noop[] = []
  * count(count => count + 1);
  * // or
  * count(count() + 1);
- * 
+ *
  * effect(() => {
  *     console.log(count()); // 1
  * });
@@ -80,11 +80,11 @@ export function state<T>(value: T): <U extends T>(new_value?: U) => T | undefine
  *
  * @example
  * let count = state(0);
- * 
+ *
  * effect(() => {
  *     console.log(count()); // runs whenever counter changes
  * });
- * 
+ *
  * count(1); // Logs: 1
  */
 export function effect(fn: Noop) {

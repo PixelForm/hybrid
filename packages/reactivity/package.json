@@ -1,9 +1,9 @@
 {
     "name": "@pixelform/reactivity",
-    "version": "0.3.0",
+    "version": "0.31.0",
     "main": "dist/index.js",
     "module": "dist/index.mjs",
-    "unpkg": "dist/production.min.js",
+    "unpkg": "dist/reactivity.min.js",
     "types": "dist/index.d.ts",
     "scripts": {
         "build": "rimraf dist && rollup -c",

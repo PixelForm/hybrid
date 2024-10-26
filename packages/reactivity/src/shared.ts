@@ -1,4 +1,3 @@
-
 /**
  * Checks two values for equality using javascript strict equal checking mode.
  * @param {any} a The first value to check.
@@ -11,10 +10,10 @@ export function strict_equal(a: any, b: any): boolean {
 
 /**
  * Checks whether a value is an `Object`.
- * @param {any} value The value to check.
- * @returns Returns `true` if the value is an `Object` else `false`.
+ * @param {unknown} value The value to check.
+ * @returns {boolean} Returns `true` if the value is an `Object` else `false`.
  */
-export function is_object(value: any): boolean {
+export function is_object(value: unknown): boolean {
     return value !== null && typeof value === 'object'
 }
 

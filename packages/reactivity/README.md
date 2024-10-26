@@ -6,10 +6,10 @@ Just import it's methods and have reactivity anywhere! As you may notice this mo
 does not come with a memo method. Perhaps if it's really needed I might add it in the future, so far a memo is just as simple as a function that returns a computed state value. This is also how you create derived state.
 
 ### Roadmap
+
 1. Drop in solutions for modern frameworks: React, Vue, Svelte. (other javascript frameworks on request)
 2. Drop in solutions for PHP and C# .NET (other frameworks on request)
 3. State/Store library
-4. Proxy based state for enhanced developer experience.
 5. Smarter state protocol for checking what actually changed and returning those values.
 
 ### Features
@@ -32,6 +32,15 @@ Or:
 ```sh
 pnpm add @pixelform/reactivity
 ```
+
+You can also directly import it from unpkg:
+```javascript
+import { state, effect } from 'https://unpkg.com/@pixelform/reactivity'
+```
+
+You can also download the script and use it directly in your code.
+Be aware that this library uses es6 modules and may not be compatible with older browsers.
+In case you need this module to be compatible with older browsers build it manually using nodejs/npm tooling.
 
 ## Basic usage
 
