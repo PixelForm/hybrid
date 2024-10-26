@@ -21,7 +21,7 @@ export default [
         input: 'src/index.ts',
         output: [
             { file: pkg.main, format: 'umd', name: 'hybrid' },
-            { file: pkg.unpkg, format: 'umd', name: 'hybrid', plugins: [minify()] },
+            { file: pkg.unpkg, format: 'es', plugins: [minify()] },
             { file: pkg.module, format: 'es' },
         ],
         plugins: [typescript()],
