@@ -3,7 +3,7 @@
     "version": "0.32.0",
     "main": "dist/index.js",
     "module": "dist/index.mjs",
-    "unpkg": "dist/reactivity.min.js",
+    "unpkg": "dist/index.min.js",
     "types": "dist/index.d.ts",
     "scripts": {
         "build": "rimraf dist && rollup -c",
