@@ -1,6 +1,6 @@
 {
     "name": "@pixelform/reactivity",
-    "version": "0.32.0",
+    "version": "0.32.1",
     "main": "dist/index.js",
     "module": "dist/index.mjs",
     "unpkg": "dist/index.min.js",

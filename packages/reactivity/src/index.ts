@@ -51,7 +51,7 @@ export function state<T>(value: T): <U extends T>(new_value?: U) => T | undefine
     const subscriptions: Set<Noop> = new Set()
 
     function invalidate<U extends T>(new_value?: U): T | undefined {
-        if (!new_value) {
+        if (arguments.length < 1) {
             const effect = stack[stack.length - 1]
             if (effect) subscriptions.add(effect)
             return value

@@ -16,6 +16,16 @@ describe('state function', () => {
         expect(undefinedState()).toBeUndefined()
     })
 
+    test('should treat true as valid value', () => {
+        const truthystate = state(true)
+        expect(truthystate()).toBeTruthy()
+    })
+
+    test('should treat false as valid value', () => {
+        const falsystate = state(false)
+        expect(falsystate()).toBeFalsy()
+    })
+
     test('should update state and notify subscribers', () => {
         const count = state(0)
         const mockEffect = jest.fn()
