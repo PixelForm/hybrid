@@ -1,3 +1,14 @@
+export type Noop = () => void
+
+export type ReactiveObject<T> = {
+    get value(): T
+    set value(new_value: T)
+    valueOf(): any
+    toString(): string
+}
+
+export let stack: Noop[] = []
+
 /**
  * Checks two values for equality using javascript strict equal checking mode.
  * @param {any} a The first value to check.
@@ -84,4 +95,71 @@ export function equal(a: any, b: any): boolean {
     }
 
     return strict_equal(a, b) && truthy(a, b)
+}
+
+
+/**
+ * Sets up a reactive effect by adding the current effect to the provided subscriptions set. NOTE: this function is for internal use only!
+ *
+ * This function is used within the `effect` function to ensure that the current effect is
+ * tracked and executed when its dependencies change.
+ *
+ * @param {Set<Noop>} subscriptions The set of reactive effects to which the current effect should be added.
+ *
+ * @example
+ * const subscriptions = new Set<Noop>();
+ * effect_setup(subscriptions);
+ */
+export function effect_setup(subscriptions: Set<Noop>) {
+    const effect = stack[stack.length - 1]
+    if (effect) subscriptions.add(effect)
+}
+
+/**
+ * Executes all reactive effects in the provided subscriptions set.
+ *
+ * This function is used to trigger the execution of all reactive effects that are
+ * tracked within the given set. Each effect is executed once, and any changes to
+ * its dependencies will cause it to be re-executed.
+ *
+ * @param {Set<Noop>} subscriptions The set of reactive effects to execute.
+ *
+ * @example
+ * const subscriptions = new Set<Noop>();
+ * subscriptions.add(() => console.log('Effect 1'));
+ * subscriptions.add(() => console.log('Effect 2'));
+ *
+ * effect_runner(subscriptions);
+ * // Logs: Effect 1
+ * // Logs: Effect 2
+ */
+export function effect_runner(subscriptions: Set<Noop>) {
+    for (const subscription of [...subscriptions]) {
+        subscription()
+    }
+}
+
+/**
+ * Creates a reactive effect that runs whenever its dependencies change.
+ *
+ * @param {Noop} fn The function to run as a reactive effect.
+ *
+ * @example
+ * let count = signal(0);
+ *
+ * effect(() => {
+ *     console.log(count()); // runs whenever counter changes
+ * });
+ *
+ * count(1); // Logs: 1
+ */
+export function effect(fn: Noop) {
+    ;(function run() {
+        stack.push(run)
+        try {
+            fn()
+        } finally {
+            stack.pop()
+        }
+    })()
 }
