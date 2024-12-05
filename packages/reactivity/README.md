@@ -1,3 +1,73 @@
+> [!WARNING]
+> This package is undergoing some breaking changes. You'll still be able to use the `state` function but this will be renamed later to `signal`. Read the documentation for more info.
+
+# Upcoming: Version 1!
+I am proud to announcing the work in progress for version 1. This version will include all necessary tools and functions for you to build a fully functional reactive framework! This version will also be having some breaking changes. Most functionality will continue to work for now but will be deprecated/change once version 1 is released.
+
+## Braking changes in v1
+
+`state` function becomes `signal` function:
+```diff
+- import { state, effect } from '@pixelform/reactivity'
++ import { signal, effect } from '@pixelform/reactivity'
+
+- let count = state(0)
++ let count = signal(0)
+
+effect(() => {
+    console.log(count())
+})
+```
+
+The new `state` function is for deeply reactive objects:
+```diff
+import { state, effect } from '@pixelform/reactivity'
+
+let data = state({
+    count: 0
+})
+
+- data({ count: data().count + 1 })
++ data.count++
+
+effect(() => {
+-    console.log(data().count)
++    console.log(data.count)
+})
+```
+
+## Features in v1
+
+### 1. Deeply reactive objects and values:
+```javascript
+import { state, effect } from '@pixelform/reactivity'
+
+let data = state({
+    count: 0
+})
+
+data.count++
+
+effect(() => {
+    console.log(data.count)
+})
+```
+
+### 2. Promise based reactivity:
+```javascript
+import { promised, effect } from '@pixelform/reactivity/promise'
+
+let data = promised(fetch('htttp://example.com/data'))
+
+effect(() => {
+    if(data.error) {
+        console.error(data.error)
+    }
+
+    console.log(data.result)
+})
+```
+
 # Reactivity
 
 A simple lightweight reactivity library. Framework agnostic and unoppinionated.
@@ -8,9 +78,8 @@ does not come with a memo method. Perhaps if it's really needed I might add it i
 ### Roadmap
 
 1. Drop in solutions for modern frameworks: React, Vue, Svelte. (other javascript frameworks on request)
-2. Drop in solutions for PHP and C# .NET (other frameworks on request)
 3. State/Store library
-5. Smarter state protocol for checking what actually changed and returning those values.
+5. Smarter state protocol for checking what actually changed.
 
 ### Features
 
@@ -18,7 +87,7 @@ does not come with a memo method. Perhaps if it's really needed I might add it i
 2. No stores or complex state management
 3. No unsubscribe problems and recursive effects
 4. Simple and lightweight
-5. Platform/Framework independent, run in NodeJs, Browser, PHP, C# .NET etc
+5. Platform/Framework independent, run in NodeJs, Browser, PHP, C# .NET etc.
 6. No rendering library! (Bring your very own like jQuery or vanilla javascript)
 
 ## Installation
