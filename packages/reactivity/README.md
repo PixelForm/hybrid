@@ -54,19 +54,7 @@ effect(() => {
 ```
 
 ### 2. Promise based reactivity:
-```javascript
-import { promised, effect } from '@pixelform/reactivity/promise'
-
-let data = promised(fetch('htttp://example.com/data'))
-
-effect(() => {
-    if(data.error) {
-        console.error(data.error)
-    }
-
-    console.log(data.result)
-})
-```
+work in progress...
 
 # Reactivity
 
