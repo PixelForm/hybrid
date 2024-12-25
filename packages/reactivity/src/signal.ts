@@ -1,4 +1,4 @@
-import { type Noop, equal, effect_setup, effect_runner } from './shared'
+import { type Noop, equal, effectSetup, effectRunner } from './shared'
 
 /**
  * Creates a signal that allows subscribing to changes and
@@ -26,7 +26,7 @@ export function signal<T>(value: T): <U extends T>(new_value?: U) => T | undefin
 
     function invalidate<U extends T>(new_value?: U): T | undefined {
         if (arguments.length < 1) {
-            effect_setup(subscriptions)
+            effectSetup(subscriptions)
             return value
         }
 
@@ -38,7 +38,7 @@ export function signal<T>(value: T): <U extends T>(new_value?: U) => T | undefin
 
         value = new_value as T
 
-        effect_runner(subscriptions)
+        effectRunner(subscriptions)
     }
 
     return invalidate

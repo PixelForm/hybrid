@@ -1,17 +1,17 @@
-import { type Noop, type ReactiveObject, equal, effect_setup, effect_runner, is_object } from './shared'
+import { type Noop, type ReactiveObject, equal, effectSetup, effectRunner, isObject } from './shared'
 
 function proxy<T>(target: Record<string, any>, key: string, subscriptions: Set<Noop>) {
     let value = target[key]
 
 	Object.defineProperty(target, key, {
 		get () {
-        	effect_setup(subscriptions)
+        	effectSetup(subscriptions)
 			return value
 		},
 		set (new_value: T) {
             if (equal(value, new_value)) return
 			value = new_value
-			effect_runner(subscriptions)
+			effectRunner(subscriptions)
 		},
         valueOf() {
 			return value
@@ -60,20 +60,20 @@ function proxy<T>(target: Record<string, any>, key: string, subscriptions: Set<N
 export function state<T>(value: T): T | (T & Record<string, any>) | (T & null) | ReactiveObject<T> {
     const subscriptions = new Set<Noop>()
 
-    if(is_object(value)) {
+    if(isObject(value)) {
         Object.keys(value as object).map(prop => proxy(value as object, prop, subscriptions))
         return value
     }
 
     return {
         get value() {
-            effect_setup(subscriptions)
+            effectSetup(subscriptions)
             return value
         },
         set value(new_value) {
             if (equal(value, new_value)) return
             value = new_value
-            effect_runner(subscriptions)
+            effectRunner(subscriptions)
         },
         valueOf() {
             return this.value

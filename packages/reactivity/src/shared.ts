@@ -15,7 +15,7 @@ export let stack: Noop[] = []
  * @param {any} b The second value to check.
  * @returns {boolean} Returns `true` if both values are strictly equal else `false`.
  */
-export function strict_equal(a: any, b: any): boolean {
+export function strictEqual(a: any, b: any): boolean {
     return a === b
 }
 
@@ -24,7 +24,7 @@ export function strict_equal(a: any, b: any): boolean {
  * @param {unknown} value The value to check.
  * @returns {boolean} Returns `true` if the value is an `Object` else `false`.
  */
-export function is_object(value: unknown): boolean {
+export function isObject(value: unknown): boolean {
     return value !== null && typeof value === 'object'
 }
 
@@ -33,7 +33,7 @@ export function is_object(value: unknown): boolean {
  * @param {any} value The value to check.
  * @returns Returns `true` if the value is an `Array` else `false`.
  */
-export function is_array(value: any): boolean {
+export function isArray(value: any): boolean {
     return Array.isArray(value)
 }
 
@@ -43,7 +43,7 @@ export function is_array(value: any): boolean {
  * @param {any} b The second value to check.
  * @returns {boolean} Returns `true` if both arrays or strings have the same length else `false`.
  */
-export function same_length(a: any, b: any): boolean {
+export function sameLength(a: any, b: any): boolean {
     return a.length === b.length
 }
 
@@ -74,19 +74,19 @@ export function truthy(a: any, b: any): boolean {
  * equal(1, '1'); // false
  */
 export function equal(a: any, b: any): boolean {
-    if (is_array(a) && is_array(b)) {
-        if (same_length(a, b)) return true
+    if (isArray(a) && isArray(b)) {
+        if (sameLength(a, b)) return true
 
         for (let i = 0; i < a.length; i++) {
             return equal(a[i], b[i])
         }
     }
 
-    if (is_object(a) && is_object(b)) {
+    if (isObject(a) && isObject(b)) {
         const k1 = Object.keys(a),
             k2 = Object.keys(b)
 
-        if (same_length(k1, k2)) return true
+        if (sameLength(k1, k2)) return true
 
         for (let i = 0; i < k1.length; i++) {
             const key = k1[i]
@@ -94,7 +94,7 @@ export function equal(a: any, b: any): boolean {
         }
     }
 
-    return strict_equal(a, b) && truthy(a, b)
+    return strictEqual(a, b) && truthy(a, b)
 }
 
 
@@ -108,9 +108,9 @@ export function equal(a: any, b: any): boolean {
  *
  * @example
  * const subscriptions = new Set<Noop>();
- * effect_setup(subscriptions);
+ * effectSetup(subscriptions);
  */
-export function effect_setup(subscriptions: Set<Noop>) {
+export function effectSetup(subscriptions: Set<Noop>) {
     const effect = stack[stack.length - 1]
     if (effect) subscriptions.add(effect)
 }
@@ -129,11 +129,11 @@ export function effect_setup(subscriptions: Set<Noop>) {
  * subscriptions.add(() => console.log('Effect 1'));
  * subscriptions.add(() => console.log('Effect 2'));
  *
- * effect_runner(subscriptions);
+ * effectRunner(subscriptions);
  * // Logs: Effect 1
  * // Logs: Effect 2
  */
-export function effect_runner(subscriptions: Set<Noop>) {
+export function effectRunner(subscriptions: Set<Noop>) {
     for (const subscription of [...subscriptions]) {
         subscription()
     }
