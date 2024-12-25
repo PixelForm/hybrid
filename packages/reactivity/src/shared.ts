@@ -97,6 +97,29 @@ export function equal(a: any, b: any): boolean {
     return strictEqual(a, b) && truthy(a, b)
 }
 
+/**
+ * Recursively deep merges two objects. Adds properties if they don't exist yet. If an empty object is passed as value then the value will be replaced instead of merged.
+ * @param {Object} target - The target object to merge into.
+ * @param {Object} source - The source object providing updates.
+ * @returns {Object} - The merged object.
+ */
+export function merge<T>(target: T, source: Partial<T>): T {
+    const result = { ...target } as Record<string, any>
+    
+    for (const key in source) {
+        if (source[key] && isObject(source[key]) && !isArray(source[key])) {
+            if (Object.keys(source[key]).length === 0) {
+                result[key] = {}
+            } else {
+            	result[key] = merge(target[key] || {}, source[key])
+            }
+        } else {
+            result[key] = source[key]
+        }
+    }
+
+    return result as T
+}
 
 /**
  * Sets up a reactive effect by adding the current effect to the provided subscriptions set. NOTE: this function is for internal use only!
