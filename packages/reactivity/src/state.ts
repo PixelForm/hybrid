@@ -1,4 +1,4 @@
-import { type Noop, type ReactiveObject, equal, effect_setup, effect_runner } from './shared'
+import { type Noop, type ReactiveObject, equal, effect_setup, effect_runner, is_object } from './shared'
 
 function proxy<T>(target: Record<string, any>, key: string, subscriptions: Set<Noop>) {
     let value = target[key]
@@ -57,10 +57,10 @@ function proxy<T>(target: Record<string, any>, key: string, subscriptions: Set<N
  *     console.log(+count); // 1
  * });
  */
-export function state<T>(value: T): (T & Record<string, any>) | (T & null) | ReactiveObject<T> {
+export function state<T>(value: T): T | (T & Record<string, any>) | (T & null) | ReactiveObject<T> {
     const subscriptions = new Set<Noop>()
 
-    if(typeof value === 'object') {
+    if(is_object(value)) {
         Object.keys(value as object).map(prop => proxy(value as object, prop, subscriptions))
         return value
     }
@@ -81,5 +81,5 @@ export function state<T>(value: T): (T & Record<string, any>) | (T & null) | Rea
         toString() {
             return this.value
         }
-    }
+    } as ReactiveObject<T>
 }
