@@ -137,7 +137,7 @@ describe('effect with signal function', () => {
         const testFunc = jest.fn()
 
         const mockEffect = jest.fn(() => {
-            if(count() >= 3) return
+            if (count() >= 3) return
             testFunc()
         })
 
@@ -191,7 +191,7 @@ describe('effect with state function', () => {
         const testFunc = jest.fn()
 
         const mockEffect = jest.fn(() => {
-            if(count.value >= 3) return
+            if (count.value >= 3) return
             testFunc()
         })
 
@@ -210,14 +210,16 @@ describe('effect with state function', () => {
 
 describe('promised based reactivity', () => {
     test('promise should resolve', () => {
-        const { result, pending } = promised(new Promise((resolve, reject) => {
-            setTimeout(() => {
-                resolve()
-            }, 2000)
-        }))
+        const { result, pending } = promised(
+            new Promise((resolve, reject) => {
+                setTimeout(() => {
+                    resolve()
+                }, 2000)
+            }),
+        )
 
         effect(() => {
-            if(pending()) return
+            if (pending()) return
             expect(result()).toBeDefined()
         })
     })

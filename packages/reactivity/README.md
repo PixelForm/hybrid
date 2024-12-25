@@ -2,6 +2,7 @@
 > This package is in active development! Expect breaking changes!
 
 # Upcoming: Version 1!
+
 I am proud to announce the work in progress for version 1. This version will include all necessary tools and functions for you to build a fully functional reactive framework! This version will also be having some breaking changes. Most functionality will continue to work for now but will be deprecated/change once version 1 is released.
 
 # Reactivity
@@ -21,19 +22,23 @@ does not come with a memo method. Perhaps if it's really needed I might add it i
 6. Not tied to a framework, bring your own rendering mechanism!
 
 ## Installation
+
 You can choose your package manager of choice npm, yarn or pnpm. This command will install Version 1 and this version is not yet stable and ready for production so be cautious using this in your code! **Breaking changes** may apply while it's being developed.
 
 **npm:**
+
 ```sh
 npm i @pixelform/reactivity@next
 ```
 
 **yarn:**
+
 ```sh
 yarn add @pixelform/reactivity@next
 ```
 
 **pnpm:**
+
 ```sh
 pnpm add @pixelform/reactivity@next
 ```
@@ -43,6 +48,7 @@ pnpm add @pixelform/reactivity@next
 Pre v1, state was declared using a state function which created a signal. Since this naming doesn't quite make much sense there will now be a `signal` function to create signals. The state function has been repurposed to create a proxy state similar to Vue's `ref` function. You can choose which function you use, both doing pretty much the same but having different developer experiences. You can use the same effect function for both `signal` and `state` functions.
 
 `state` function becomes `signal` function:
+
 ```diff
 - import { state, effect } from '@pixelform/reactivity'
 + import { signal, effect } from '@pixelform/reactivity'
@@ -56,6 +62,7 @@ effect(() => {
 ```
 
 The new `state` function could be used for (deeply) reactive objects:
+
 ```diff
 import { state, effect } from '@pixelform/reactivity'
 
@@ -73,17 +80,18 @@ effect(() => {
 ```
 
 or simple values:
+
 ```javascript
-    const count = state(0)
+const count = state(0)
 
-    count.value += 1
+count.value += 1
 
-    effect(() => {
-        console.log(count.value)
+effect(() => {
+    console.log(count.value)
 
-        // Can be used directly in a string too, omitting the `value` property:
-        console.log(`The value of count is: ${count}`)
-    })
+    // Can be used directly in a string too, omitting the `value` property:
+    console.log(`The value of count is: ${count}`)
+})
 ```
 
 ## Contributing

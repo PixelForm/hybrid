@@ -1,25 +1,32 @@
-import { type Noop, type ReactiveObject, equal, effectSetup, effectRunner, isObject } from './shared'
+import {
+    type Noop,
+    type ReactiveObject,
+    equal,
+    effectSetup,
+    effectRunner,
+    isObject,
+} from './shared'
 
 function proxy<T>(target: Record<string, any>, key: string, subscriptions: Set<Noop>) {
     let value = target[key]
 
-	Object.defineProperty(target, key, {
-		get () {
-        	effectSetup(subscriptions)
-			return value
-		},
-		set (new_value: T) {
+    Object.defineProperty(target, key, {
+        get() {
+            effectSetup(subscriptions)
+            return value
+        },
+        set(new_value: T) {
             if (equal(value, new_value)) return
-			value = new_value
-			effectRunner(subscriptions)
-		},
+            value = new_value
+            effectRunner(subscriptions)
+        },
         valueOf() {
-			return value
-		},
-		toString() {
-			return value
-		}
-	} as Record<string, any>)
+            return value
+        },
+        toString() {
+            return value
+        },
+    } as Record<string, any>)
 }
 
 /**
@@ -39,7 +46,7 @@ function proxy<T>(target: Record<string, any>, key: string, subscriptions: Set<N
  *
  * The reactive state object or proxy will have `valueOf` and `toString` methods that
  * return the current value of the `value` property.
- * 
+ *
  * @example
  * const count = state(0);
  *
@@ -50,9 +57,9 @@ function proxy<T>(target: Record<string, any>, key: string, subscriptions: Set<N
  * effect(() => {
  *     console.log(count.value); // 1
  * });
- * 
+ *
  * // or
- * 
+ *
  * effect(() => {
  *     console.log(+count); // 1
  * });
@@ -60,7 +67,7 @@ function proxy<T>(target: Record<string, any>, key: string, subscriptions: Set<N
 export function state<T>(value: T): T | (T & Record<string, any>) | (T & null) | ReactiveObject<T> {
     const subscriptions = new Set<Noop>()
 
-    if(isObject(value)) {
+    if (isObject(value)) {
         Object.keys(value as object).map(prop => proxy(value as object, prop, subscriptions))
         return value
     }
@@ -80,6 +87,6 @@ export function state<T>(value: T): T | (T & Record<string, any>) | (T & null) |
         },
         toString() {
             return this.value
-        }
+        },
     } as ReactiveObject<T>
 }
