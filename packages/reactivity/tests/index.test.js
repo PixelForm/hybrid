@@ -1,4 +1,4 @@
-const { signal, state, effect } = require('../dist/index.js')
+const { signal, state, effect, promised } = require('../dist/index.js')
 
 describe('signal function', () => {
     test('should initialize signal with a given value', () => {
@@ -205,5 +205,20 @@ describe('effect with state function', () => {
         count.value += 1
 
         expect(testFunc).toHaveBeenCalledTimes(3)
+    })
+})
+
+describe('promised based reactivity', () => {
+    test('promise should resolve', () => {
+        const { result, pending } = promised(new Promise((resolve, reject) => {
+            setTimeout(() => {
+                resolve()
+            }, 2000)
+        }))
+
+        effect(() => {
+            if(pending()) return
+            expect(result()).toBeDefined()
+        })
     })
 })

@@ -23,3 +23,4 @@
 export { signal } from './signal'
 export { state } from './state'
 export { effect } from './shared'
+export { promised } from './promised'
