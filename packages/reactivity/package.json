@@ -24,7 +24,7 @@
     "author": "pixelform",
     "repository": {
         "type": "git",
-        "url": "https://github.com/PixelForm/hybrid",
+        "url": "https://github.com/PixelForm/hybrid.git",
         "directory": "packages/reactivity"
     },
     "homepage": "https://github.com/PixelForm/hybrid/tree/v1/packages/reactivity#readme",
