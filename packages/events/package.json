@@ -1,24 +1,45 @@
 {
-	"name": "@pixelform/events",
-	"version": "0.0.0",
-	"main": "dist/events.cjs.js",
-	"module": "dist/events.esm.js",
-	"browser": "dist/events.min.js",
-	"scripts": {
-		"build": "rollup -c",
-		"format": "prettier -w ."
-	},
-	"keywords": [],
-	"author": "pixelform",
-	"license": "MIT",
-	"description": "",
-	"devDependencies": {
-		"@rollup/plugin-node-resolve": "^15.2.3",
-		"@rollup/plugin-terser": "^0.4.4",
-		"prettier": "^3.2.5",
-		"rollup": "^4.17.2"
-	},
-	"files": [
-		"dist"
-	]
+    "name": "@pixelform/events",
+    "version": "0.01.0",
+    "main": "dist/index.js",
+    "module": "dist/index.mjs",
+    "unpkg": "dist/index.min.js",
+    "browser": "dist/events.min.js",
+    "types": "dist/index.d.ts",
+    "scripts": {
+        "build": "rimraf dist && rollup -c",
+        "prepublishOnly": "npm run build && npm run test",
+        "lint": "prettier --check .",
+        "format": "prettier -w .",
+        "test": "npx jest"
+    },
+    "keywords": [
+        "reactivity",
+        "reactive",
+        "state",
+        "store"
+    ],
+    "author": "pixelform",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/PixelForm/hybrid",
+        "directory": "packages/reactivity"
+    },
+    "license": "MIT",
+    "description": "Add reactive state to your application with ease.",
+    "devDependencies": {
+        "@rollup/plugin-terser": "^0.4.4",
+        "@rollup/plugin-typescript": "^11.1.6",
+        "@types/jest": "^29.5.12",
+        "@types/node": "^20.14.2",
+        "jest": "^29.7.0",
+        "prettier": "^3.3.1",
+        "rimraf": "^5.0.7",
+        "rollup": "^4.18.0",
+        "ts-jest": "^29.1.4",
+        "tslib": "^2.6.3"
+    },
+    "files": [
+        "dist"
+    ]
 }

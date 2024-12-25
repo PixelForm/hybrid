@@ -1,24 +1,30 @@
-import resolve from '@rollup/plugin-node-resolve'
+import typescript from '@rollup/plugin-typescript'
 import terser from '@rollup/plugin-terser'
 import { readFile } from 'node:fs/promises'
 
 const pkg = JSON.parse(await readFile('package.json'))
 
+const minify = () =>
+    terser({
+        compress: {
+            ecma: 2022,
+            unsafe_arrows: true,
+            inline: true,
+            keep_fargs: false,
+            module: true,
+            passes: 3,
+        },
+    })
+
 export default [
-	{
-		input: 'src/index.js',
-		output: {
-			name: 'hyper',
-			file: pkg.browser,
-			format: 'iife',
-		},
-		plugins: [resolve(), terser({ compress: { passes: 2 } })],
-	},
-	{
-		input: 'src/index.js',
-		output: [
-			{ file: pkg.main, format: 'cjs' },
-			{ file: pkg.module, format: 'es' },
-		],
-	},
+    {
+        input: 'src/index.ts',
+        output: [
+            { file: pkg.main, format: 'umd', name: 'hybrid' },
+            { file: pkg.unpkg, format: 'es', plugins: [minify()] },
+            { file: pkg.module, format: 'es' },
+            { file: pkg.browser, format: 'iffe', name: 'hybrid', plugins: [minify()] },
+        ],
+        plugins: [typescript()],
+    },
 ]

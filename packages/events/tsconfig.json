@@ -1,0 +1,12 @@
+{
+    "compilerOptions": {
+        "outDir": "dist",
+        "module": "es2022",
+        "target": "es2016",
+        "esModuleInterop": true,
+        "forceConsistentCasingInFileNames": true,
+        "strict": true,
+        "declaration": true
+    },
+    "include": ["src/**/*"]
+}
