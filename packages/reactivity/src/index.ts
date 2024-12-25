@@ -20,6 +20,6 @@
  * SOFTWARE.
  */
 
-export { signal as state } from './signal'
-export { state as _state } from './state'
+export { signal } from './signal'
+export { state } from './state'
 export { effect } from './shared'
