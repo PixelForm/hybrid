@@ -4,7 +4,7 @@
 # Upcoming: Version 1!
 I am proud to announce the work in progress for version 1. This version will include all necessary tools and functions for you to build a fully functional reactive framework! This version will also be having some breaking changes. Most functionality will continue to work for now but will be deprecated/change once version 1 is released.
 
-## Braking changes in v1
+## Breaking changes in v1
 
 `state` function becomes `signal` function:
 ```diff
