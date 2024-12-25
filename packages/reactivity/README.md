@@ -94,6 +94,45 @@ effect(() => {
 })
 ```
 
+## Features in Version 1
+Signal state is now deep merged which makes updating easier:
+
+```javascript
+const user = signal({
+    details: { name: 'John Doe', age: 31 },
+    preferences: { theme: 'light' }
+})
+
+user({ details: { age: 34 } })
+
+effect(() => {
+    console.log(user())
+    /*
+        Logs:
+        {
+            details: {
+                name: 'John Doe',
+                age: 34
+            },
+            preferences: {
+                theme: 'light'
+            }
+        }
+    */
+})
+```
+
+Promised based reactivity:
+```javascript
+import { promised } from '@pixelform/reactivity'
+
+const { result, pending, error } = promised(Promise.resolve(5))
+
+effect(() => {
+    console.log(result()) // 5
+})
+```
+
 ## Contributing
 
 Contributions are welcome! Please follow these steps to contribute:
