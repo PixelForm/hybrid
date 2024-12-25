@@ -209,18 +209,16 @@ describe('effect with state function', () => {
 })
 
 describe('promised based reactivity', () => {
-    test('promise should resolve', () => {
+    test('promise should resolve', async () => {
         const { result, pending } = promised(
-            new Promise((resolve, reject) => {
-                setTimeout(() => {
-                    resolve()
-                }, 2000)
+            new Promise((resolve) => {
+                resolve('result')
             }),
         )
 
         effect(() => {
             if (pending()) return
-            expect(result()).toBeDefined()
+            expect(result()).toBe('result')
         })
     })
 })
