@@ -13,10 +13,13 @@
         "test": "npx jest"
     },
     "keywords": [
+        "signal",
+        "signals",
         "reactivity",
         "reactive",
         "state",
-        "store"
+        "store",
+        "state management"
     ],
     "author": "pixelform",
     "repository": {
@@ -24,6 +27,7 @@
         "url": "https://github.com/PixelForm/hybrid",
         "directory": "packages/reactivity"
     },
+    "homepage": "https://github.com/PixelForm/hybrid/tree/v1/packages/reactivity#readme",
     "license": "MIT",
     "description": "Add reactive state to your application with ease.",
     "devDependencies": {
