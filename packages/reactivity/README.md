@@ -1,10 +1,46 @@
 > [!WARNING]
-> This package is undergoing some breaking changes. You'll still be able to use the `state` function but this will be renamed later to `signal`. Read the documentation for more info.
+> This package is in active development! Expect breaking changes!
 
 # Upcoming: Version 1!
 I am proud to announce the work in progress for version 1. This version will include all necessary tools and functions for you to build a fully functional reactive framework! This version will also be having some breaking changes. Most functionality will continue to work for now but will be deprecated/change once version 1 is released.
 
+# Reactivity
+
+A simple lightweight reactivity library. Framework agnostic and unoppinionated.
+With a very simple api this package is very lightweight and easy to use.
+Just import it's methods and have reactivity anywhere! As you may notice this module does not use stores. This is because I think stores are very unnecessary as stores are simply state that's accessed globally. Also this module
+does not come with a memo method. Perhaps if it's really needed I might add it in the future, so far a memo is just as simple as a function that returns a computed state value. This is also how you create derived state.
+
+### Features
+
+1. State anywhere! ✨
+2. No store functions or complex state management!
+3. No unsubscribe problems and recursive effects!
+4. Simple and lightweight!
+5. Platform independent works both in Nodejs and in the browser!
+6. Not tied to a framework, bring your own rendering mechanism!
+
+## Installation
+You can choose your package manager of choice npm, yarn or pnpm. This command will install Version 1 and this version is not yet stable and ready for production so be cautious using this in your code! **Breaking changes** may apply while it's being developed.
+
+**npm:**
+```sh
+npm i @pixelform/reactivity@next
+```
+
+**yarn:**
+```sh
+yarn add @pixelform/reactivity@next
+```
+
+**pnpm:**
+```sh
+pnpm add @pixelform/reactivity@next
+```
+
 ## Breaking changes in v1
+
+Pre v1, state was declared using a state function which created a signal. Since this naming doesn't quite make much sense there will now be a `signal` function to create signals. The state function has been repurposed to create a proxy state similar to Vue's `ref` function. You can choose which function you use, both doing pretty much the same but having different developer experiences. You can use the same effect function for both `signal` and `state` functions.
 
 `state` function becomes `signal` function:
 ```diff
@@ -19,7 +55,7 @@ effect(() => {
 })
 ```
 
-The new `state` function is for deeply reactive objects:
+The new `state` function could be used for (deeply) reactive objects:
 ```diff
 import { state, effect } from '@pixelform/reactivity'
 
@@ -36,119 +72,18 @@ effect(() => {
 })
 ```
 
-## Features in v1
-
-### 1. Deeply reactive objects and values:
+or simple values:
 ```javascript
-import { state, effect } from '@pixelform/reactivity'
+    const count = state(0)
 
-let data = state({
-    count: 0
-})
+    count.value += 1
 
-data.count++
+    effect(() => {
+        console.log(count.value)
 
-effect(() => {
-    console.log(data.count)
-})
-```
-
-### 2. Promise based reactivity:
-work in progress...
-
-# Reactivity
-
-A simple lightweight reactivity library. Framework agnostic and unoppinionated.
-With a very simple api this package is very lightweight and easy to use.
-Just import it's methods and have reactivity anywhere! As you may notice this module does not use stores. This is because I think stores are very unnecessary as stores are simply state that's accessed globally. Also this module
-does not come with a memo method. Perhaps if it's really needed I might add it in the future, so far a memo is just as simple as a function that returns a computed state value. This is also how you create derived state.
-
-### Roadmap
-
-1. Drop in solutions for modern frameworks: React, Vue, Svelte. (other javascript frameworks on request)
-3. State/Store library
-5. Smarter state protocol for checking what actually changed.
-
-### Features
-
-1. State anywhere! ✨
-2. No stores or complex state management
-3. No unsubscribe problems and recursive effects
-4. Simple and lightweight
-5. Platform/Framework independent, run in NodeJs, Browser, PHP, C# .NET etc.
-6. No rendering library! (Bring your very own like jQuery or vanilla javascript)
-
-## Installation
-
-```sh
-npm install @pixelform/reactivity
-```
-
-Or:
-
-```sh
-pnpm add @pixelform/reactivity
-```
-
-You can also directly import it from unpkg:
-```javascript
-import { state, effect } from 'https://unpkg.com/@pixelform/reactivity'
-```
-
-You can also download the script and use it directly in your code.
-Be aware that this library uses es6 modules and may not be compatible with older browsers.
-In case you need this module to be compatible with older browsers build it manually using nodejs/npm tooling.
-
-## Basic usage
-
-```javascript
-import { state, effect } from '@pixelform/reactivity'
-
-const count = state(0)
-
-count(count => count + 1)
-// or
-count(count() + 1)
-
-effect(() => {
-    console.log(count())
-})
-```
-
-### Derived state/memo/computed values
-
-```javascript
-import { state, effect } from '@pixelform/reactivity'
-
-const count = state(0)
-const doubled = () => count() * 2
-
-count(count => count + 1)
-
-effect(() => {
-    console.log(count()) // logs 1
-    console.log(doubled()) // logs 2
-})
-```
-
-### Global state access (store like)
-
-For example export your state:
-
-```javascript
-import { state, effect } from '@pixelform/reactivity'
-
-export const count = state(0)
-```
-
-And import it where you need it:
-
-```javascript
-import { count } from './stores'
-
-effect(() => {
-    console.log(count()) // logs 0
-})
+        // Can be used directly in a string too, omitting the `value` property:
+        console.log(`The value of count is: ${count}`)
+    })
 ```
 
 ## Contributing
