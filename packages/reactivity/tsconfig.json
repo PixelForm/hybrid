@@ -1,6 +1,7 @@
 {
     "compilerOptions": {
         "outDir": "dist",
+        "rootDir": "./src",
         "module": "es2022",
         "target": "es2016",
         "esModuleInterop": true,
