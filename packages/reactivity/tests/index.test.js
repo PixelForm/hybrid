@@ -1,13 +1,4 @@
-const {
-    signal,
-    state,
-    effect,
-    promised,
-    derived,
-    snapshot,
-    trigger,
-    asyncState,
-} = require('../dist/index.js')
+const { signal, state, effect, promised, derived, snapshot, trigger } = require('../dist/index.js')
 
 describe('signal function', () => {
     test('should initialize signal with a given value', () => {
@@ -218,23 +209,96 @@ describe('effect with state function', () => {
 })
 
 describe('promised based reactivity', () => {
-    test('promise should resolve', async () => {
-        const { result, pending } = promised(Promise.resolve('result'))
+    test('should resolve into result and clear pending', async () => {
+        const store = promised(Promise.resolve('result'))
+
+        expect(store.pending).toBe(true)
 
         await new Promise(resolve => setTimeout(resolve, 0))
 
-        expect(pending()).toBe(false)
-        expect(result()).toBe('result')
+        expect(store.pending).toBe(false)
+        expect(store.error).toBe(null)
+        expect(store.result).toBe('result')
     })
 
-    test('promise should reject', async () => {
+    test('should capture rejection in error', async () => {
         const failure = new Error('boom')
-        const { error, pending } = promised(Promise.reject(failure))
+        const store = promised(Promise.reject(failure))
 
         await new Promise(resolve => setTimeout(resolve, 0))
 
-        expect(pending()).toBe(false)
-        expect(error()).toBe(failure)
+        expect(store.pending).toBe(false)
+        expect(store.error).toBe(failure)
+    })
+
+    test('resolved object result should be deeply reactive', async () => {
+        const store = promised(Promise.resolve({ count: 0 }))
+
+        await new Promise(resolve => setTimeout(resolve, 0))
+
+        const mockEffect = jest.fn(() => store.result.count)
+        effect(mockEffect)
+
+        store.result.count++
+        expect(mockEffect).toHaveBeenCalledTimes(2)
+    })
+
+    test('should re-run when a reactive source dependency changes', async () => {
+        const id = state(1)
+        const factory = jest.fn(() => Promise.resolve(id.value * 10))
+        const store = promised(() => factory())
+
+        await new Promise(resolve => setTimeout(resolve, 0))
+        expect(factory).toHaveBeenCalledTimes(1)
+        expect(store.result).toBe(10)
+
+        id.value = 2
+        await new Promise(resolve => setTimeout(resolve, 0))
+        expect(factory).toHaveBeenCalledTimes(2)
+        expect(store.result).toBe(20)
+    })
+
+    test('should ignore stale results from superseded runs (race)', async () => {
+        let resolveFirst
+        const first = new Promise(resolve => (resolveFirst = resolve))
+        const second = Promise.resolve('second')
+        const sources = [() => first, () => second]
+        let call = 0
+
+        const store = promised(() => sources[call++]())
+
+        // trigger a second run before the first settles
+        store.reload()
+        await new Promise(resolve => setTimeout(resolve, 0))
+        expect(store.result).toBe('second')
+
+        // the stale first promise resolves last but must be ignored
+        resolveFirst('first')
+        await new Promise(resolve => setTimeout(resolve, 0))
+        expect(store.result).toBe('second')
+    })
+
+    test('reload should re-run the source', async () => {
+        const factory = jest.fn(() => Promise.resolve('value'))
+        const store = promised(() => factory())
+
+        await new Promise(resolve => setTimeout(resolve, 0))
+        expect(factory).toHaveBeenCalledTimes(1)
+
+        store.reload()
+        await new Promise(resolve => setTimeout(resolve, 0))
+        expect(factory).toHaveBeenCalledTimes(2)
+    })
+
+    test('should not re-run when result/error/pending change', async () => {
+        const factory = jest.fn(() => Promise.resolve('value'))
+        promised(() => factory())
+
+        await new Promise(resolve => setTimeout(resolve, 0))
+        await new Promise(resolve => setTimeout(resolve, 0))
+
+        // settling sets result/pending; this must not loop into another run
+        expect(factory).toHaveBeenCalledTimes(1)
     })
 })
 
@@ -310,11 +374,37 @@ describe('derived state', () => {
 
         const mockEffect = jest.fn(() => double.value)
         effect(mockEffect)
-        expect(mockEffect).toHaveBeenCalledWith()
+        expect(mockEffect).toHaveBeenCalledTimes(1)
         expect(double.value).toBe(2)
 
         count.value = 5
         expect(double.value).toBe(10)
+        expect(mockEffect).toHaveBeenCalledTimes(2)
+    })
+
+    test('should be lazy and not compute until first read', () => {
+        const count = state(1)
+        const compute = jest.fn(() => count.value * 2)
+        const double = derived(compute)
+
+        expect(compute).not.toHaveBeenCalled()
+
+        expect(double.value).toBe(2)
+        expect(compute).toHaveBeenCalledTimes(1)
+    })
+
+    test('should memoize and only recompute when dependencies change', () => {
+        const count = state(2)
+        const compute = jest.fn(() => count.value * 2)
+        const double = derived(compute)
+
+        expect(double.value).toBe(4)
+        expect(double.value).toBe(4)
+        expect(compute).toHaveBeenCalledTimes(1) // cached
+
+        count.value = 3
+        expect(double.value).toBe(6)
+        expect(compute).toHaveBeenCalledTimes(2) // recomputed once
     })
 })
 
@@ -346,41 +436,5 @@ describe('trigger', () => {
 
         trigger(data, 'value')
         expect(mockEffect).toHaveBeenCalledTimes(3)
-    })
-})
-
-describe('asyncState', () => {
-    test('should resolve into result and clear pending', async () => {
-        const store = asyncState(Promise.resolve({ name: 'John' }))
-
-        expect(store.pending).toBe(true)
-
-        await new Promise(resolve => setTimeout(resolve, 0))
-
-        expect(store.pending).toBe(false)
-        expect(store.error).toBe(null)
-        expect(store.result).toEqual({ name: 'John' })
-    })
-
-    test('resolved object result should be deeply reactive', async () => {
-        const store = asyncState(Promise.resolve({ count: 0 }))
-
-        await new Promise(resolve => setTimeout(resolve, 0))
-
-        const mockEffect = jest.fn(() => store.result.count)
-        effect(mockEffect)
-
-        store.result.count++
-        expect(mockEffect).toHaveBeenCalledTimes(2)
-    })
-
-    test('should capture rejection in error', async () => {
-        const failure = new Error('nope')
-        const store = asyncState(Promise.reject(failure))
-
-        await new Promise(resolve => setTimeout(resolve, 0))
-
-        expect(store.pending).toBe(false)
-        expect(store.error).toBe(failure)
     })
 })

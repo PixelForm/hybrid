@@ -147,42 +147,51 @@ Promised based reactivity:
 ```javascript
 import { promised } from '@pixelform/reactivity'
 
-const { result, pending, error } = promised(Promise.resolve(5))
+const user = promised(Promise.resolve(5))
 
 effect(() => {
-    console.log(result()) // 5
+    console.log(user.result) // 5
 })
 ```
 
-Derived (computed) state recomputes automatically when its reactive
-dependencies change and is read-only:
+Derived (computed) state is **lazy** and **memoized**: it isn't computed until
+first read, recomputes only when one of its reactive dependencies changes, and
+is read-only:
 
 ```javascript
 import { state, derived, effect } from '@pixelform/reactivity'
 
 const count = state(1)
-const double = derived(() => count.value * 2)
+const double = derived(() => count.value * 2) // not computed yet
 
 effect(() => {
-    console.log(double.value) // 2, then re-runs when count changes
+    console.log(double.value) // computes once: 2
 })
 
-count.value = 5 // double.value becomes 10
+count.value = 5 // marks stale; double.value recomputes to 10 on next read
+count.value = 5 // unchanged: cached value is reused, no recomputation
 ```
 
-Async state is deeply reactive and reacts to a promise. `pending` starts `true`
-and flips to `false` once the promise settles, filling `result` or `error`:
+`promised` creates a deeply reactive state that reacts to a promise. `pending`
+starts `true` and flips to `false` once the promise settles, filling `result` or
+`error`. Pass a function returning a promise to make the source reactive: it
+re-runs whenever its dependencies change, ignores stale results from superseded
+runs (preventing race conditions), and exposes a `reload()` method:
 
 ```javascript
-import { asyncState, effect } from '@pixelform/reactivity'
+import { state, promised, effect } from '@pixelform/reactivity'
 
-const user = asyncState(fetch('/api/user').then(res => res.json()))
+const query = state('a')
+const search = promised(() => fetch(`/api?q=${query.value}`).then(res => res.json()))
 
 effect(() => {
-    if (user.pending) return console.log('loading…')
-    if (user.error) return console.log('failed:', user.error)
-    console.log(user.result) // deeply reactive once resolved
+    if (search.pending) return console.log('loading…')
+    if (search.error) return console.log('failed:', search.error)
+    console.log(search.result) // deeply reactive once resolved
 })
+
+query.value = 'b' // triggers a new request; the stale one is ignored
+search.reload() // manually re-run the source
 ```
 
 `snapshot` creates a plain, non-reactive deep clone, handy for logging or

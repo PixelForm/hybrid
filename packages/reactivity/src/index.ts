@@ -21,6 +21,14 @@
  */
 
 export { signal } from './signal'
-export { state, derived, snapshot, reactive, trigger, asyncState, type AsyncState } from './state'
+export {
+    state,
+    derived,
+    snapshot,
+    reactive,
+    trigger,
+    promised,
+    type AsyncState,
+    type PromiseSource,
+} from './state'
 export { effect } from './shared'
-export { promised } from './promised'
