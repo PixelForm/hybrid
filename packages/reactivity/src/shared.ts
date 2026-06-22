@@ -48,16 +48,6 @@ export function sameLength(a: any, b: any): boolean {
 }
 
 /**
- * Checks if two values result in truthy values.
- * @param {any} a The first value to check.
- * @param {any} b The second value to check.
- * @returns {boolean} Returns `true` if both values are not `null` or the same type else `false`.
- */
-export function truthy(a: any, b: any): boolean {
-    return a !== null || b !== null || typeof a === typeof b
-}
-
-/**
  * Checks if the provided value is equal.
  *
  * This function performs a deep equality check for primitive values,
@@ -75,26 +65,30 @@ export function truthy(a: any, b: any): boolean {
  */
 export function equal(a: any, b: any): boolean {
     if (isArray(a) && isArray(b)) {
-        if (sameLength(a, b)) return true
+        if (!sameLength(a, b)) return false
 
         for (let i = 0; i < a.length; i++) {
-            return equal(a[i], b[i])
+            if (!equal(a[i], b[i])) return false
         }
+
+        return true
     }
 
     if (isObject(a) && isObject(b)) {
         const k1 = Object.keys(a),
             k2 = Object.keys(b)
 
-        if (sameLength(k1, k2)) return true
+        if (!sameLength(k1, k2)) return false
 
         for (let i = 0; i < k1.length; i++) {
             const key = k1[i]
-            return key in b || equal(a[key], b[key])
+            if (!(key in b) || !equal(a[key], b[key])) return false
         }
+
+        return true
     }
 
-    return strictEqual(a, b) && truthy(a, b)
+    return Object.is(a, b)
 }
 
 /**
@@ -105,16 +99,18 @@ export function equal(a: any, b: any): boolean {
  */
 export function merge<T>(target: T, source: Partial<T>): T {
     const result = { ...target } as Record<string, any>
-    
+
     for (const key in source) {
-        if (source[key] && isObject(source[key]) && !isArray(source[key])) {
-            if (Object.keys(source[key]).length === 0) {
+        const value = source[key] as any
+
+        if (value && isObject(value) && !isArray(value)) {
+            if (Object.keys(value).length === 0) {
                 result[key] = {}
             } else {
-            	result[key] = merge(target[key] || {}, source[key])
+                result[key] = merge((target as any)[key] || {}, value)
             }
         } else {
-            result[key] = source[key]
+            result[key] = value
         }
     }
 

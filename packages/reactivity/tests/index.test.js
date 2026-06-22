@@ -1,4 +1,13 @@
-const { signal, state, effect, promised } = require('../dist/index.js')
+const {
+    signal,
+    state,
+    effect,
+    promised,
+    derived,
+    snapshot,
+    trigger,
+    asyncState,
+} = require('../dist/index.js')
 
 describe('signal function', () => {
     test('should initialize signal with a given value', () => {
@@ -210,15 +219,168 @@ describe('effect with state function', () => {
 
 describe('promised based reactivity', () => {
     test('promise should resolve', async () => {
-        const { result, pending } = promised(
-            new Promise((resolve) => {
-                resolve('result')
-            }),
-        )
+        const { result, pending } = promised(Promise.resolve('result'))
 
-        effect(() => {
-            if (pending()) return
-            expect(result()).toBe('result')
-        })
+        await new Promise(resolve => setTimeout(resolve, 0))
+
+        expect(pending()).toBe(false)
+        expect(result()).toBe('result')
+    })
+
+    test('promise should reject', async () => {
+        const failure = new Error('boom')
+        const { error, pending } = promised(Promise.reject(failure))
+
+        await new Promise(resolve => setTimeout(resolve, 0))
+
+        expect(pending()).toBe(false)
+        expect(error()).toBe(failure)
+    })
+})
+
+describe('deep reactive state', () => {
+    test('should react to nested object mutations', () => {
+        const data = state({ details: { age: 31 } })
+        const mockEffect = jest.fn(() => data.details.age)
+
+        effect(mockEffect)
+        expect(mockEffect).toHaveBeenCalledTimes(1)
+
+        data.details.age++
+        expect(mockEffect).toHaveBeenCalledTimes(2)
+    })
+
+    test('should not notify when a value does not change', () => {
+        const data = state({ count: 0 })
+        const mockEffect = jest.fn(() => data.count)
+
+        effect(mockEffect)
+        data.count = 0
+        expect(mockEffect).toHaveBeenCalledTimes(1)
+    })
+
+    test('should react to array push via length', () => {
+        const data = state({ items: [1] })
+        const mockEffect = jest.fn(() => data.items.length)
+
+        effect(mockEffect)
+        expect(mockEffect).toHaveBeenCalledTimes(1)
+
+        data.items.push(2)
+        expect(mockEffect).toHaveBeenCalledTimes(2)
+        expect(data.items.length).toBe(2)
+    })
+
+    test('should react to array index assignment', () => {
+        const list = state([1, 2, 3])
+        const mockEffect = jest.fn(() => list[0])
+
+        effect(mockEffect)
+        list[0] = 10
+        expect(mockEffect).toHaveBeenCalledTimes(2)
+    })
+
+    test('should react to newly added properties', () => {
+        const data = state({})
+        const mockEffect = jest.fn(() => Object.keys(data).length)
+
+        effect(mockEffect)
+        expect(mockEffect).toHaveBeenCalledTimes(1)
+
+        data.added = true
+        expect(mockEffect).toHaveBeenCalledTimes(2)
+    })
+
+    test('should react to deleted properties', () => {
+        const data = state({ a: 1 })
+        const mockEffect = jest.fn(() => Object.keys(data).length)
+
+        effect(mockEffect)
+        delete data.a
+        expect(mockEffect).toHaveBeenCalledTimes(2)
+    })
+})
+
+describe('derived state', () => {
+    test('should compute and update from dependencies', () => {
+        const count = state(1)
+        const double = derived(() => count.value * 2)
+
+        expect(double.value).toBe(2)
+
+        const mockEffect = jest.fn(() => double.value)
+        effect(mockEffect)
+        expect(mockEffect).toHaveBeenCalledWith()
+        expect(double.value).toBe(2)
+
+        count.value = 5
+        expect(double.value).toBe(10)
+    })
+})
+
+describe('snapshot', () => {
+    test('should create a plain non-reactive deep clone', () => {
+        const data = state({ details: { age: 31 }, tags: ['a'] })
+        const plain = snapshot(data)
+
+        expect(plain).toEqual({ details: { age: 31 }, tags: ['a'] })
+
+        const mockEffect = jest.fn(() => data.details.age)
+        effect(mockEffect)
+
+        plain.details.age = 99
+        expect(mockEffect).toHaveBeenCalledTimes(1)
+    })
+})
+
+describe('trigger', () => {
+    test('should manually re-run subscribers', () => {
+        const data = state({ value: 1 })
+        const mockEffect = jest.fn(() => data.value)
+
+        effect(mockEffect)
+        expect(mockEffect).toHaveBeenCalledTimes(1)
+
+        trigger(data)
+        expect(mockEffect).toHaveBeenCalledTimes(2)
+
+        trigger(data, 'value')
+        expect(mockEffect).toHaveBeenCalledTimes(3)
+    })
+})
+
+describe('asyncState', () => {
+    test('should resolve into result and clear pending', async () => {
+        const store = asyncState(Promise.resolve({ name: 'John' }))
+
+        expect(store.pending).toBe(true)
+
+        await new Promise(resolve => setTimeout(resolve, 0))
+
+        expect(store.pending).toBe(false)
+        expect(store.error).toBe(null)
+        expect(store.result).toEqual({ name: 'John' })
+    })
+
+    test('resolved object result should be deeply reactive', async () => {
+        const store = asyncState(Promise.resolve({ count: 0 }))
+
+        await new Promise(resolve => setTimeout(resolve, 0))
+
+        const mockEffect = jest.fn(() => store.result.count)
+        effect(mockEffect)
+
+        store.result.count++
+        expect(mockEffect).toHaveBeenCalledTimes(2)
+    })
+
+    test('should capture rejection in error', async () => {
+        const failure = new Error('nope')
+        const store = asyncState(Promise.reject(failure))
+
+        await new Promise(resolve => setTimeout(resolve, 0))
+
+        expect(store.pending).toBe(false)
+        expect(store.error).toBe(failure)
     })
 })

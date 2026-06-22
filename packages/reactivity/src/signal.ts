@@ -20,7 +20,7 @@ import { type Noop, equal, effectSetup, effectRunner, isObject, merge } from './
  * effect(() => {
  *     console.log(count()); // 1
  * });
- * 
+ *
  * // merges state if it's an object
  * const data = signal({
  *     nested: {
@@ -28,9 +28,9 @@ import { type Noop, equal, effectSetup, effectRunner, isObject, merge } from './
  *         otherValue: 'Something else'
  *     }
  * })
- * 
+ *
  * data({ nested: { value: 10 } })
- * 
+ *
  * effect(() => {
  *     console.log(data()) // { nested: { value: 10, otherValue: 'Something else' } }
  * })
@@ -48,15 +48,18 @@ export function signal<T>(value: T): <U extends T>(new_value?: U) => T | undefin
             new_value = (new_value as (prev: T) => U)(value)
         }
 
-        if(isObject(value) && isObject(new_value)) {
-            value = merge(value, new_value as Partial<U>)
-        }
+        const next =
+            isObject(value) && isObject(new_value)
+                ? merge(value, new_value as Partial<U>)
+                : (new_value as T)
 
-        if (equal(value, new_value)) return value
+        if (equal(value, next)) return value
 
-        value = new_value as T
+        value = next
 
         effectRunner(subscriptions)
+
+        return value
     }
 
     return invalidate

@@ -61,7 +61,7 @@ effect(() => {
 })
 ```
 
-The new `state` function could be used for (deeply) reactive objects:
+The new `state` function could be used for deeply reactive objects:
 
 ```diff
 import { state, effect } from '@pixelform/reactivity'
@@ -77,6 +77,25 @@ effect(() => {
 -    console.log(data().count)
 +    console.log(data.count)
 })
+```
+
+State created with `state` is **deeply** reactive. Nested objects and arrays are
+reactive too, properties added later are tracked, and array mutations trigger
+effects:
+
+```javascript
+const user = state({
+    details: { name: 'John Doe', age: 31 },
+    tags: ['admin'],
+})
+
+effect(() => {
+    console.log(user.details.age, user.tags.length)
+})
+
+user.details.age++ // re-runs the effect
+user.tags.push('editor') // re-runs the effect
+user.active = true // newly added properties are reactive too
 ```
 
 or simple values:
@@ -95,12 +114,13 @@ effect(() => {
 ```
 
 ## Features in Version 1
+
 Signal state is now deep merged which makes updating easier:
 
 ```javascript
 const user = signal({
     details: { name: 'John Doe', age: 31 },
-    preferences: { theme: 'light' }
+    preferences: { theme: 'light' },
 })
 
 user({ details: { age: 34 } })
@@ -123,6 +143,7 @@ effect(() => {
 ```
 
 Promised based reactivity:
+
 ```javascript
 import { promised } from '@pixelform/reactivity'
 
@@ -131,6 +152,54 @@ const { result, pending, error } = promised(Promise.resolve(5))
 effect(() => {
     console.log(result()) // 5
 })
+```
+
+Derived (computed) state recomputes automatically when its reactive
+dependencies change and is read-only:
+
+```javascript
+import { state, derived, effect } from '@pixelform/reactivity'
+
+const count = state(1)
+const double = derived(() => count.value * 2)
+
+effect(() => {
+    console.log(double.value) // 2, then re-runs when count changes
+})
+
+count.value = 5 // double.value becomes 10
+```
+
+Async state is deeply reactive and reacts to a promise. `pending` starts `true`
+and flips to `false` once the promise settles, filling `result` or `error`:
+
+```javascript
+import { asyncState, effect } from '@pixelform/reactivity'
+
+const user = asyncState(fetch('/api/user').then(res => res.json()))
+
+effect(() => {
+    if (user.pending) return console.log('loading…')
+    if (user.error) return console.log('failed:', user.error)
+    console.log(user.result) // deeply reactive once resolved
+})
+```
+
+`snapshot` creates a plain, non-reactive deep clone, handy for logging or
+serialization. `trigger` manually re-runs the effects subscribed to a reactive
+value:
+
+```javascript
+import { state, snapshot, trigger, effect } from '@pixelform/reactivity'
+
+const data = state({ items: [1, 2, 3] })
+
+console.log(snapshot(data)) // { items: [1, 2, 3] } (plain, not reactive)
+
+effect(() => console.log(data.items.length))
+
+trigger(data) // force the effect to run again
+trigger(data, 'items') // only effects depending on `items`
 ```
 
 ## Contributing
