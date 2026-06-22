@@ -8,16 +8,6 @@ export type ReactiveObject<T> = {
 }
 
 /**
- * Checks two values for equality using javascript strict equal checking mode.
- * @param {any} a The first value to check.
- * @param {any} b The second value to check.
- * @returns {boolean} Returns `true` if both values are strictly equal else `false`.
- */
-export function strictEqual(a: any, b: any): boolean {
-    return a === b
-}
-
-/**
  * Checks whether a value is an `Object`.
  * @param {unknown} value The value to check.
  * @returns {boolean} Returns `true` if the value is an `Object` else `false`.
@@ -102,7 +92,8 @@ export function merge<T>(target: T, source: Partial<T>): T {
         const value = source[key] as any
 
         if (value && isObject(value) && !isArray(value)) {
-            if (Object.keys(value).length === 0) {
+            const valueKeys = Object.keys(value)
+            if (valueKeys.length === 0) {
                 result[key] = {}
             } else {
                 result[key] = merge((target as any)[key] || {}, value)
@@ -134,7 +125,11 @@ export interface EffectOptions {
     onError?: (error: unknown) => void
 }
 
-type Queue = 'pre' | 'normal' | 'post'
+/** Flush queue identifiers, ordered by priority (lowest runs first). */
+const QUEUE_PRE = 0
+const QUEUE_NORMAL = 1
+const QUEUE_POST = 2
+type Queue = typeof QUEUE_PRE | typeof QUEUE_NORMAL | typeof QUEUE_POST
 
 /**
  * Internal reactive node shared by effects and computed values.
@@ -148,7 +143,6 @@ export interface Reaction {
     parent: Reaction | null
     queue: Queue
     active: boolean
-    running: boolean
     onError: ((error: unknown) => void) | null
 }
 
@@ -168,6 +162,9 @@ let shouldTrack = true
 const preQueue: Set<Reaction> = new Set()
 const normalQueue: Set<Reaction> = new Set()
 const postQueue: Set<Reaction> = new Set()
+
+/** Queues indexed by their {@link Queue} identifier for O(1) lookup. */
+const queues = [preQueue, normalQueue, postQueue]
 
 let flushing = false
 let batchDepth = 0
@@ -205,9 +202,7 @@ export function effectRunner(subscriptions: Subscribers) {
 }
 
 function queueFor(reaction: Reaction): Set<Reaction> {
-    if (reaction.queue === 'pre') return preQueue
-    if (reaction.queue === 'post') return postQueue
-    return normalQueue
+    return queues[reaction.queue]
 }
 
 function schedule(reaction: Reaction) {
@@ -245,9 +240,7 @@ export function flush() {
         let reaction: Reaction | undefined
         while ((reaction = nextReaction())) {
             if (++iterations > MAX_FLUSH_ITERATIONS) {
-                preQueue.clear()
-                normalQueue.clear()
-                postQueue.clear()
+                for (const queue of queues) queue.clear()
                 throw new Error(
                     'Maximum effect update depth exceeded. This usually indicates an effect that repeatedly updates a value it depends on.',
                 )
@@ -306,12 +299,10 @@ export function withReaction<T>(reaction: Reaction, fn: () => T): T {
     const prevTrack = shouldTrack
     activeReaction = reaction
     shouldTrack = true
-    reaction.running = true
 
     try {
         return fn()
     } finally {
-        reaction.running = false
         activeReaction = prevReaction
         shouldTrack = prevTrack
     }
@@ -331,21 +322,25 @@ function runReaction(reaction: Reaction) {
     }
 }
 
-function createReaction(fn: EffectFn, queue: Queue, options?: EffectOptions): Reaction {
+function createReaction(
+    fn: EffectFn,
+    queue: Queue,
+    parent: Reaction | null = activeReaction,
+    options?: EffectOptions,
+): Reaction {
     const reaction: Reaction = {
         fn,
         scheduler: null,
         cleanup: null,
         deps: new Set(),
         children: new Set(),
-        parent: activeReaction,
+        parent,
         queue,
         active: true,
-        running: false,
         onError: options?.onError ?? null,
     }
 
-    if (activeReaction) activeReaction.children.add(reaction)
+    if (parent) parent.children.add(reaction)
 
     return reaction
 }
@@ -357,7 +352,7 @@ function createReaction(fn: EffectFn, queue: Queue, options?: EffectOptions): Re
  * @param {Noop} scheduler Invoked when a tracked dependency changes.
  */
 export function createComputed(scheduler: Noop): Reaction {
-    const reaction = createReaction(noop, 'normal')
+    const reaction = createReaction(noop, QUEUE_NORMAL)
     reaction.scheduler = scheduler
     return reaction
 }
@@ -376,20 +371,18 @@ export function stop(reaction: Reaction) {
 
     if (reaction.parent) reaction.parent.children.delete(reaction)
 
-    preQueue.delete(reaction)
-    normalQueue.delete(reaction)
-    postQueue.delete(reaction)
+    for (const queue of queues) queue.delete(reaction)
 }
 
 function createEffect(queue: Queue) {
     return (fn: EffectFn, options?: EffectOptions): Noop => {
-        const reaction = createReaction(fn, queue, options)
+        const reaction = createReaction(fn, queue, activeReaction, options)
         runReaction(reaction)
         return () => stop(reaction)
     }
 }
 
-const baseEffect = createEffect('normal')
+const baseEffect = createEffect(QUEUE_NORMAL)
 
 /**
  * Runs `fn` without tracking any reactive reads inside it as dependencies.
@@ -446,18 +439,7 @@ export function tick(): Promise<void> {
  * @returns {T} The return value of `fn`.
  */
 function root<T>(fn: (dispose: Noop) => T): T {
-    const scope: Reaction = {
-        fn: noop,
-        scheduler: null,
-        cleanup: null,
-        deps: new Set(),
-        children: new Set(),
-        parent: null,
-        queue: 'normal',
-        active: true,
-        running: false,
-        onError: null,
-    }
+    const scope = createReaction(noop, QUEUE_NORMAL, null)
 
     const dispose: Noop = () => stop(scope)
 
@@ -511,8 +493,8 @@ function tracking(): boolean {
  * dispose() // logs: cleanup; stops the effect
  */
 export const effect = Object.assign(baseEffect, {
-    pre: createEffect('pre'),
-    post: createEffect('post'),
+    pre: createEffect(QUEUE_PRE),
+    post: createEffect(QUEUE_POST),
     root,
     tracking,
 })
