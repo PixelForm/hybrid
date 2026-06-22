@@ -211,6 +211,90 @@ trigger(data) // force the effect to run again
 trigger(data, 'items') // only effects depending on `items`
 ```
 
+## Effects
+
+`effect` runs a function immediately and re-runs it whenever its reactive
+dependencies change. Dependencies are tracked precisely on every run, so
+branches that are no longer read stop triggering the effect. An effect may
+return a cleanup function, which runs before each re-run and when the effect is
+stopped. Calling the value returned by `effect` disposes it:
+
+```javascript
+import { signal, effect } from '@pixelform/reactivity'
+
+const count = signal(0)
+
+const dispose = effect(() => {
+    console.log(count())
+    return () => console.log('cleanup') // runs before re-run and on dispose
+})
+
+count(1) // logs: cleanup, then 1
+dispose() // logs: cleanup; the effect no longer runs
+```
+
+Updates are batched: an effect runs at most once per flush even when several of
+its dependencies change. Within a flush, effects run in `pre` → normal → `post`
+order, mirroring Svelte 5.
+
+```javascript
+effect.pre(() => {}) // runs before normal effects in a flush
+effect(() => {}) // normal effect
+effect.post(() => {}) // runs after normal effects (a `tick` substitute)
+```
+
+`effect.root` creates an isolated scope. Effects created inside it are owned by
+the scope instead of the surrounding effect, and are disposed together when the
+provided `dispose` function is called. `effect.tracking()` reports whether code
+is currently running inside a reactive context:
+
+```javascript
+import { effect } from '@pixelform/reactivity'
+
+const dispose = effect.root(dispose => {
+    effect(() => {
+        /* ... */
+    })
+    return dispose
+})
+
+dispose() // stops every effect created inside the scope
+```
+
+You can also pass an error boundary so a throwing effect doesn't crash the
+flush:
+
+```javascript
+effect(
+    () => {
+        throw new Error('boom')
+    },
+    { onError: error => console.error(error) },
+)
+```
+
+`untrack`, `batch`, `flush` and `tick` give finer control over tracking and
+scheduling:
+
+```javascript
+import { signal, effect, untrack, batch, tick } from '@pixelform/reactivity'
+
+const a = signal(0)
+const b = signal(0)
+
+effect(() => {
+    a() // tracked
+    untrack(() => b()) // read without subscribing
+})
+
+batch(() => {
+    a(1)
+    b(1) // dependent effects run once, after the batch
+})
+
+await tick() // resolves once pending effects have flushed
+```
+
 ## Contributing
 
 Contributions are welcome! Please follow these steps to contribute:

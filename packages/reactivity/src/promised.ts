@@ -1,5 +1,5 @@
-import { effect } from '../shared'
-import { reactive } from './reactive'
+import { effect } from './shared'
+import { reactive } from './state/reactive'
 
 /**
  * A source for {@link promised}: either a promise, or a function returning a

@@ -1,4 +1,16 @@
-const { signal, state, effect, promised, derived, snapshot, trigger } = require('../dist/index.js')
+const {
+    signal,
+    state,
+    effect,
+    untrack,
+    batch,
+    flush,
+    tick,
+    promised,
+    derived,
+    snapshot,
+    trigger,
+} = require('../dist/index.js')
 
 describe('signal function', () => {
     test('should initialize signal with a given value', () => {
@@ -436,5 +448,199 @@ describe('trigger', () => {
 
         trigger(data, 'value')
         expect(mockEffect).toHaveBeenCalledTimes(3)
+    })
+})
+
+describe('effect function', () => {
+    test('should run the effect immediately', () => {
+        const mockEffect = jest.fn()
+        effect(mockEffect)
+        expect(mockEffect).toHaveBeenCalledTimes(1)
+    })
+
+    test('should run cleanup before re-running and on dispose', () => {
+        const count = signal(0)
+        const cleanup = jest.fn()
+
+        const dispose = effect(() => {
+            count()
+            return cleanup
+        })
+
+        expect(cleanup).toHaveBeenCalledTimes(0)
+
+        count(1)
+        expect(cleanup).toHaveBeenCalledTimes(1) // before re-run
+
+        dispose()
+        expect(cleanup).toHaveBeenCalledTimes(2) // on dispose
+    })
+
+    test('should not re-run after disposal', () => {
+        const count = signal(0)
+        const mockEffect = jest.fn(() => count())
+
+        const dispose = effect(mockEffect)
+        expect(mockEffect).toHaveBeenCalledTimes(1)
+
+        dispose()
+        count(1)
+        expect(mockEffect).toHaveBeenCalledTimes(1)
+    })
+
+    test('should clean up stale dependencies precisely', () => {
+        const toggle = signal(true)
+        const a = signal('a')
+        const b = signal('b')
+        const mockEffect = jest.fn(() => (toggle() ? a() : b()))
+
+        effect(mockEffect)
+        expect(mockEffect).toHaveBeenCalledTimes(1)
+
+        // Currently depends on `a`, not `b`.
+        b('b2')
+        expect(mockEffect).toHaveBeenCalledTimes(1)
+
+        a('a2')
+        expect(mockEffect).toHaveBeenCalledTimes(2)
+
+        // Switch dependency to `b`; `a` should no longer trigger.
+        toggle(false)
+        expect(mockEffect).toHaveBeenCalledTimes(3)
+
+        a('a3')
+        expect(mockEffect).toHaveBeenCalledTimes(3)
+
+        b('b3')
+        expect(mockEffect).toHaveBeenCalledTimes(4)
+    })
+
+    test('should throw on an unbounded update loop', () => {
+        const count = signal(0)
+        expect(() => {
+            effect(() => {
+                count(count() + 1)
+            })
+        }).toThrow(/Maximum effect update depth/)
+    })
+
+    test('should terminate a bounded self-updating effect', () => {
+        const count = signal(0)
+        expect(() => {
+            effect(() => {
+                if (count() < 3) count(count() + 1)
+            })
+        }).not.toThrow()
+        expect(count()).toBe(3)
+    })
+
+    test('should run pre, normal and post effects in order', () => {
+        const trigger = signal(0)
+        const order = []
+
+        effect.pre(() => {
+            trigger()
+            order.push('pre')
+        })
+        effect(() => {
+            trigger()
+            order.push('normal')
+        })
+        effect.post(() => {
+            trigger()
+            order.push('post')
+        })
+
+        order.length = 0
+        trigger(1)
+        expect(order).toEqual(['pre', 'normal', 'post'])
+    })
+
+    test('should report tracking context', () => {
+        expect(effect.tracking()).toBe(false)
+
+        let inside = null
+        const dispose = effect(() => {
+            inside = effect.tracking()
+        })
+
+        expect(inside).toBe(true)
+        expect(effect.tracking()).toBe(false)
+        dispose()
+    })
+
+    test('should isolate effects in a root scope and dispose them', () => {
+        const count = signal(0)
+        const mockEffect = jest.fn(() => count())
+
+        let dispose
+        effect.root(stop => {
+            effect(mockEffect)
+            dispose = stop
+        })
+
+        expect(mockEffect).toHaveBeenCalledTimes(1)
+
+        count(1)
+        expect(mockEffect).toHaveBeenCalledTimes(2)
+
+        dispose()
+        count(2)
+        expect(mockEffect).toHaveBeenCalledTimes(2)
+    })
+
+    test('should not subscribe to reads inside untrack', () => {
+        const count = signal(0)
+        const mockEffect = jest.fn(() => untrack(() => count()))
+
+        effect(mockEffect)
+        expect(mockEffect).toHaveBeenCalledTimes(1)
+
+        count(1)
+        expect(mockEffect).toHaveBeenCalledTimes(1)
+    })
+
+    test('should route errors to an onError boundary', () => {
+        const count = signal(0)
+        const onError = jest.fn()
+
+        effect(
+            () => {
+                if (count() === 1) throw new Error('boom')
+            },
+            { onError },
+        )
+
+        expect(onError).not.toHaveBeenCalled()
+        count(1)
+        expect(onError).toHaveBeenCalledTimes(1)
+        expect(onError.mock.calls[0][0]).toBeInstanceOf(Error)
+    })
+
+    test('should run dependent effects once per batch', () => {
+        const a = signal(0)
+        const b = signal(0)
+        const mockEffect = jest.fn(() => {
+            a()
+            b()
+        })
+
+        effect(mockEffect)
+        expect(mockEffect).toHaveBeenCalledTimes(1)
+
+        batch(() => {
+            a(1)
+            b(1)
+        })
+        expect(mockEffect).toHaveBeenCalledTimes(2)
+    })
+
+    test('should flush pending effects via tick', async () => {
+        const count = signal(0)
+        const mockEffect = jest.fn(() => count())
+
+        effect(mockEffect)
+        await tick()
+        expect(mockEffect).toHaveBeenCalledTimes(1)
     })
 })

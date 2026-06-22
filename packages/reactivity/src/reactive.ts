@@ -1,4 +1,4 @@
-import { type Noop, effectSetup, effectRunner, equal, isArray, isObject } from '../shared'
+import { type Subscribers, effectSetup, effectRunner, equal, isArray, isObject } from './shared'
 
 /**
  * Sentinel dependency key used to track iteration based reads such as
@@ -12,7 +12,7 @@ export const ITERATE_KEY = Symbol('iterate')
  */
 export const RAW = Symbol('raw')
 
-type DepsMap = Map<PropertyKey, Set<Noop>>
+type DepsMap = Map<PropertyKey, Subscribers>
 
 const targetMap = new WeakMap<object, DepsMap>()
 const proxyCache = new WeakMap<object, any>()
@@ -30,10 +30,10 @@ function canReactive(value: any): boolean {
 }
 
 function unwrap<T>(value: T): T {
-    return isObject(value) ? ((value as any)[RAW] ?? value) : value
+    return isObject(value) ? (value as any)[RAW] ?? value : value
 }
 
-function getSubscriptions(target: object, key: PropertyKey): Set<Noop> {
+function getSubscriptions(target: object, key: PropertyKey): Subscribers {
     let deps = targetMap.get(target)
     if (!deps) targetMap.set(target, (deps = new Map()))
 

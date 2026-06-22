@@ -1,4 +1,4 @@
-import { isArray, isObject } from '../shared'
+import { isArray, isObject } from './shared'
 import { RAW } from './reactive'
 
 /**
@@ -16,7 +16,7 @@ import { RAW } from './reactive'
  * const plain = snapshot(user) // { details: { name: 'John' } } (not reactive)
  */
 export function snapshot<T>(value: T): T {
-    const raw = isObject(value) ? ((value as any)[RAW] ?? value) : value
+    const raw = isObject(value) ? (value as any)[RAW] ?? value : value
 
     if (isArray(raw)) {
         return (raw as any[]).map(item => snapshot(item)) as T

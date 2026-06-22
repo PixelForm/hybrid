@@ -1,4 +1,11 @@
-import { type Noop, type ReactiveObject, stack, effectSetup, effectRunner } from '../shared'
+import {
+    type ReactiveObject,
+    type Subscribers,
+    createComputed,
+    effectSetup,
+    effectRunner,
+    withReaction,
+} from './shared'
 
 /**
  * Creates a read-only, lazily evaluated and memoized reactive value computed
@@ -26,32 +33,25 @@ import { type Noop, type ReactiveObject, stack, effectSetup, effectRunner } from
  * count.value = 5 // unchanged: cached value is reused, no recomputation
  */
 export function derived<T>(fn: () => T): ReactiveObject<T> {
-    const subscriptions: Set<Noop> = new Set()
+    const subscriptions: Subscribers = new Set()
     let value: T
     let stale = true
 
     // Runs when a tracked dependency changes: marks the cache stale and notifies
     // any effects depending on this computed so they re-read and recompute.
-    function scheduler() {
+    const reaction = createComputed(() => {
         if (!stale) {
             stale = true
             effectRunner(subscriptions)
         }
-    }
-
-    function compute() {
-        stack.push(scheduler)
-        try {
-            value = fn()
-            stale = false
-        } finally {
-            stack.pop()
-        }
-    }
+    })
 
     function read(): T {
         effectSetup(subscriptions)
-        if (stale) compute()
+        if (stale) {
+            value = withReaction(reaction, fn)
+            stale = false
+        }
         return value
     }
 

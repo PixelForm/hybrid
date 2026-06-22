@@ -1,4 +1,4 @@
-import { type ReactiveObject, equal, isObject } from '../shared'
+import { type ReactiveObject, equal, isObject } from './shared'
 import { reactive, track, notify } from './reactive'
 
 /**
