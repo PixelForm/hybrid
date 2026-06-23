@@ -151,6 +151,19 @@ export interface Reaction {
  */
 export type Subscribers = Set<Reaction>
 
+/** Internal slot used to attach a {@link Reaction} to an {@link EffectRef}. */
+const REACTION = Symbol('reaction')
+
+/**
+ * The value returned by {@link effect} and {@link watch}. Calling it disposes
+ * (stops) the effect. It also carries a reference to the underlying reaction so
+ * it can be force-run with {@link trigger}.
+ */
+export interface EffectRef {
+    (): void
+    [REACTION]: Reaction
+}
+
 const noop: Noop = () => {}
 
 /** The reaction currently being tracked, if any. */
@@ -375,10 +388,12 @@ export function stop(reaction: Reaction) {
 }
 
 function createEffect(queue: Queue) {
-    return (fn: EffectFn, options?: EffectOptions): Noop => {
+    return (fn: EffectFn, options?: EffectOptions): EffectRef => {
         const reaction = createReaction(fn, queue, activeReaction, options)
         runReaction(reaction)
-        return () => stop(reaction)
+        const ref = (() => stop(reaction)) as EffectRef
+        ref[REACTION] = reaction
+        return ref
     }
 }
 
@@ -479,17 +494,17 @@ function tracking(): boolean {
  *
  * @param {EffectFn} fn The function to run as a reactive effect.
  * @param {EffectOptions} [options] Optional configuration, e.g. an error handler.
- * @returns {Noop} A function that stops (disposes) the effect.
+ * @returns {EffectRef} A function that stops (disposes) the effect.
  *
  * @example
- * const count = signal(0)
+ * const count = state(0)
  *
  * const dispose = effect(() => {
- *     console.log(count()) // runs now and whenever count changes
+ *     console.log(count.value) // runs now and whenever count changes
  *     return () => console.log('cleanup')
  * })
  *
- * count(1) // logs: cleanup, then 1
+ * count.set(1) // logs: cleanup, then 1
  * dispose() // logs: cleanup; stops the effect
  */
 export const effect = Object.assign(baseEffect, {
@@ -498,3 +513,76 @@ export const effect = Object.assign(baseEffect, {
     root,
     tracking,
 })
+
+/**
+ * Subscribes to a single dependency so the surrounding effect re-runs when it
+ * changes. Works for both reactive objects exposing `value` (primitive state,
+ * derived) and deeply reactive proxies (object/array state).
+ */
+function readDep(dep: unknown): void {
+    if (!isObject(dep)) return
+
+    // Reactive objects (primitive state, derived) expose a `value` getter.
+    if ('value' in (dep as object)) void (dep as { value: unknown }).value
+
+    // Reactive proxies (object/array state) track reads of their properties and
+    // their structure (iteration), so reading every current key subscribes to
+    // value and structural changes alike.
+    for (const key in dep as Record<string, unknown>) void (dep as Record<string, unknown>)[key]
+}
+
+/**
+ * Runs `callback` whenever any of the listed dependencies change. Unlike
+ * {@link effect}, dependencies are specified manually and the callback does
+ * **not** run on creation — only on subsequent changes. Reactive reads inside
+ * `callback` are not tracked, so only the listed dependencies drive re-runs.
+ *
+ * The callback may return a {@link Cleanup} function, which runs before each
+ * re-run and when the watcher is stopped. Calling the returned function stops
+ * the watcher.
+ *
+ * @param {unknown[]} deps The reactive values to watch.
+ * @param {EffectFn} callback Runs when any dependency changes.
+ * @returns {EffectRef} A function that stops (disposes) the watcher.
+ *
+ * @example
+ * const count = state(0)
+ * const user = state({ name: 'John' })
+ *
+ * const stop = watch([count, user], () => {
+ *     console.log('changed', count.value, user.name)
+ * })
+ *
+ * count.set(1) // logs: changed 1 John
+ * stop() // stops watching
+ */
+export function watch(deps: unknown[], callback: EffectFn): EffectRef {
+    let first = true
+
+    return baseEffect(() => {
+        for (const dep of deps) readDep(dep)
+
+        if (first) {
+            first = false
+            return
+        }
+
+        return untrack(callback)
+    })
+}
+
+/**
+ * Manually re-runs a specific effect or watcher, regardless of whether its
+ * dependencies changed. Pass the reference returned by {@link effect} or
+ * {@link watch}.
+ *
+ * @param {EffectRef} ref The effect or watcher to run.
+ *
+ * @example
+ * const ref = effect(() => console.log('run'))
+ * trigger(ref) // logs: run
+ */
+export function trigger(ref: EffectRef): void {
+    const reaction = ref[REACTION]
+    if (reaction) effectRunner(new Set([reaction]))
+}

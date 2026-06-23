@@ -20,11 +20,8 @@
  * SOFTWARE.
  */
 
-export { signal } from './signal'
 export * from './state'
 export * from './derived'
-export * from './promised'
 export * from './snapshot'
-export { track, notify, trigger } from './reactive'
-export { effect, untrack, batch, flush, tick } from './shared'
-export type { Cleanup, EffectFn, EffectOptions } from './shared'
+export { effect, watch, trigger, untrack, batch, flush, tick } from './shared'
+export type { Cleanup, EffectFn, EffectOptions, EffectRef } from './shared'

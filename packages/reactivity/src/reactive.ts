@@ -1,4 +1,12 @@
-import { type Subscribers, effectSetup, effectRunner, equal, isArray, isObject } from './shared'
+import {
+    type Subscribers,
+    batch,
+    effectSetup,
+    effectRunner,
+    equal,
+    isArray,
+    isObject,
+} from './shared'
 
 /**
  * Sentinel dependency key used to track iteration based reads such as
@@ -16,6 +24,7 @@ type DepsMap = Map<PropertyKey, Subscribers>
 
 const targetMap = new WeakMap<object, DepsMap>()
 const proxyCache = new WeakMap<object, any>()
+const setterCache = new WeakMap<object, (value: any) => void>()
 
 /**
  * Checks whether a value can be turned into a deep reactive proxy. Only plain
@@ -81,6 +90,21 @@ export function reactive<T extends object>(target: T): T {
         get(obj, key, receiver) {
             if (key === RAW) return obj
 
+            // Expose a `set` method that merges a value or updater result into
+            // the reactive object in a single batched update, unless the object
+            // already defines its own `set` property.
+            if (key === 'set' && !Reflect.has(obj, key)) {
+                let setter = setterCache.get(obj)
+                if (!setter) {
+                    setter = (value: any) => {
+                        const next = typeof value === 'function' ? value(receiver) : value
+                        batch(() => Object.assign(receiver, next))
+                    }
+                    setterCache.set(obj, setter)
+                }
+                return setter
+            }
+
             const result = Reflect.get(obj, key, receiver)
 
             if (typeof key === 'symbol') return result
@@ -130,33 +154,4 @@ export function reactive<T extends object>(target: T): T {
     proxyCache.set(target, proxy)
 
     return proxy
-}
-
-/**
- * Manually re-runs the effects subscribed to a reactive value. Useful when a
- * change cannot be detected automatically, or to force dependent effects to run.
- *
- * @param {object} reactive A reactive proxy or reactive object.
- * @param {PropertyKey} [key] When provided, only effects depending on this key are run.
- *
- * @example
- * const user = state({ name: 'John' })
- * effect(() => console.log(user.name))
- *
- * trigger(user) // re-runs the effect
- * trigger(user, 'name') // re-runs effects depending on `name`
- */
-export function trigger(reactive: object, key?: PropertyKey) {
-    const target = unwrap(reactive) as object
-    const deps = targetMap.get(target)
-    if (!deps) return
-
-    if (key !== undefined) {
-        notify(target, key)
-        return
-    }
-
-    for (const subscriptions of deps.values()) {
-        effectRunner(subscriptions)
-    }
 }

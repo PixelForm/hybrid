@@ -1,66 +1,15 @@
 const {
-    signal,
     state,
     effect,
+    watch,
     untrack,
     batch,
     flush,
     tick,
-    promised,
     derived,
     snapshot,
     trigger,
 } = require('../dist/index.js')
-
-describe('signal function', () => {
-    test('should initialize signal with a given value', () => {
-        const count = signal(0)
-        expect(count()).toBe(0)
-    })
-
-    test('should treat null as a valid signal value', () => {
-        const nullState = signal(null)
-        expect(nullState()).toBe(null)
-    })
-
-    test('should treat undefined as a valid signal value', () => {
-        const undefinedState = signal(undefined)
-        expect(undefinedState()).toBeUndefined()
-    })
-
-    test('should treat true as valid signal value', () => {
-        const truthystate = signal(true)
-        expect(truthystate()).toBeTruthy()
-    })
-
-    test('should treat false as valid signal value', () => {
-        const falsystate = signal(false)
-        expect(falsystate()).toBeFalsy()
-    })
-
-    test('should update signal and notify subscribers', () => {
-        const count = signal(0)
-        const mockEffect = jest.fn()
-        effect(() => {
-            mockEffect(count())
-        })
-
-        expect(mockEffect).toHaveBeenCalledWith(0)
-        count(1)
-        expect(mockEffect).toHaveBeenCalledWith(1)
-    })
-
-    test('should not notify subscribers if signal does not change', () => {
-        const count = signal(0)
-        const mockEffect = jest.fn()
-        effect(() => {
-            mockEffect(count())
-        })
-
-        count(0)
-        expect(mockEffect).toHaveBeenCalledTimes(1) // Initial call only
-    })
-})
 
 describe('state function', () => {
     test('should initialize state with a given value', () => {
@@ -110,59 +59,48 @@ describe('state function', () => {
         count.value = 0
         expect(mockEffect).toHaveBeenCalledTimes(1) // Initial call only
     })
-})
 
-describe('effect with signal function', () => {
-    test('should run effect immediately', () => {
-        const mockEffect = jest.fn()
-        effect(mockEffect)
-        expect(mockEffect).toHaveBeenCalledTimes(1)
-    })
-
-    test('should re-run effect when dependencies change', () => {
-        const count = signal(0)
-        const mockEffect = jest.fn(() => {
-            count()
-        })
+    test('should update a primitive via set with a value', () => {
+        const count = state(0)
+        const mockEffect = jest.fn(() => count.value)
 
         effect(mockEffect)
         expect(mockEffect).toHaveBeenCalledTimes(1)
-        count(1)
+
+        count.set(5)
+        expect(count.value).toBe(5)
         expect(mockEffect).toHaveBeenCalledTimes(2)
     })
 
-    test('should handle nested effects correctly', () => {
-        const outerEffect = jest.fn()
-        const innerEffect = jest.fn()
+    test('should update a primitive via set with an updater function', () => {
+        const count = state(1)
 
-        effect(() => {
-            outerEffect()
-            effect(innerEffect)
-        })
+        count.set(c => c + 1)
+        expect(count.value).toBe(2)
 
-        expect(outerEffect).toHaveBeenCalledTimes(1)
-        expect(innerEffect).toHaveBeenCalledTimes(1)
+        count.set(c => c * 10)
+        expect(count.value).toBe(20)
     })
 
-    test('should handle conditionals with state correctly', () => {
-        const count = signal(0)
-        const testFunc = jest.fn()
-
-        const mockEffect = jest.fn(() => {
-            if (count() >= 3) return
-            testFunc()
-        })
+    test('should merge an object via set with a value', () => {
+        const user = state({ name: 'John', age: 30 })
+        const mockEffect = jest.fn(() => user.age)
 
         effect(mockEffect)
+        expect(mockEffect).toHaveBeenCalledTimes(1)
 
-        count(count() + 1)
-        count(count() + 1)
-        count(count() + 1)
-        count(count() + 1)
-        count(count() + 1)
-        count(count() + 1)
+        user.set({ age: 31 })
+        expect(user.age).toBe(31)
+        expect(user.name).toBe('John')
+        expect(mockEffect).toHaveBeenCalledTimes(2)
+    })
 
-        expect(testFunc).toHaveBeenCalledTimes(3)
+    test('should update an object via set with an updater function', () => {
+        const user = state({ count: 0 })
+
+        user.set(prev => ({ count: prev.count + 1, added: true }))
+        expect(user.count).toBe(1)
+        expect(user.added).toBe(true)
     })
 })
 
@@ -217,100 +155,6 @@ describe('effect with state function', () => {
         count.value += 1
 
         expect(testFunc).toHaveBeenCalledTimes(3)
-    })
-})
-
-describe('promised based reactivity', () => {
-    test('should resolve into result and clear pending', async () => {
-        const store = promised(Promise.resolve('result'))
-
-        expect(store.pending).toBe(true)
-
-        await new Promise(resolve => setTimeout(resolve, 0))
-
-        expect(store.pending).toBe(false)
-        expect(store.error).toBe(null)
-        expect(store.result).toBe('result')
-    })
-
-    test('should capture rejection in error', async () => {
-        const failure = new Error('boom')
-        const store = promised(Promise.reject(failure))
-
-        await new Promise(resolve => setTimeout(resolve, 0))
-
-        expect(store.pending).toBe(false)
-        expect(store.error).toBe(failure)
-    })
-
-    test('resolved object result should be deeply reactive', async () => {
-        const store = promised(Promise.resolve({ count: 0 }))
-
-        await new Promise(resolve => setTimeout(resolve, 0))
-
-        const mockEffect = jest.fn(() => store.result.count)
-        effect(mockEffect)
-
-        store.result.count++
-        expect(mockEffect).toHaveBeenCalledTimes(2)
-    })
-
-    test('should re-run when a reactive source dependency changes', async () => {
-        const id = state(1)
-        const factory = jest.fn(() => Promise.resolve(id.value * 10))
-        const store = promised(() => factory())
-
-        await new Promise(resolve => setTimeout(resolve, 0))
-        expect(factory).toHaveBeenCalledTimes(1)
-        expect(store.result).toBe(10)
-
-        id.value = 2
-        await new Promise(resolve => setTimeout(resolve, 0))
-        expect(factory).toHaveBeenCalledTimes(2)
-        expect(store.result).toBe(20)
-    })
-
-    test('should ignore stale results from superseded runs (race)', async () => {
-        let resolveFirst
-        const first = new Promise(resolve => (resolveFirst = resolve))
-        const second = Promise.resolve('second')
-        const sources = [() => first, () => second]
-        let call = 0
-
-        const store = promised(() => sources[call++]())
-
-        // trigger a second run before the first settles
-        store.reload()
-        await new Promise(resolve => setTimeout(resolve, 0))
-        expect(store.result).toBe('second')
-
-        // the stale first promise resolves last but must be ignored
-        resolveFirst('first')
-        await new Promise(resolve => setTimeout(resolve, 0))
-        expect(store.result).toBe('second')
-    })
-
-    test('reload should re-run the source', async () => {
-        const factory = jest.fn(() => Promise.resolve('value'))
-        const store = promised(() => factory())
-
-        await new Promise(resolve => setTimeout(resolve, 0))
-        expect(factory).toHaveBeenCalledTimes(1)
-
-        store.reload()
-        await new Promise(resolve => setTimeout(resolve, 0))
-        expect(factory).toHaveBeenCalledTimes(2)
-    })
-
-    test('should not re-run when result/error/pending change', async () => {
-        const factory = jest.fn(() => Promise.resolve('value'))
-        promised(() => factory())
-
-        await new Promise(resolve => setTimeout(resolve, 0))
-        await new Promise(resolve => setTimeout(resolve, 0))
-
-        // settling sets result/pending; this must not loop into another run
-        expect(factory).toHaveBeenCalledTimes(1)
     })
 })
 
@@ -436,18 +280,130 @@ describe('snapshot', () => {
 })
 
 describe('trigger', () => {
-    test('should manually re-run subscribers', () => {
-        const data = state({ value: 1 })
-        const mockEffect = jest.fn(() => data.value)
+    test('should manually re-run a specific effect', () => {
+        const mockEffect = jest.fn()
+        const ref = effect(mockEffect)
 
-        effect(mockEffect)
         expect(mockEffect).toHaveBeenCalledTimes(1)
 
-        trigger(data)
+        trigger(ref)
         expect(mockEffect).toHaveBeenCalledTimes(2)
 
-        trigger(data, 'value')
+        trigger(ref)
         expect(mockEffect).toHaveBeenCalledTimes(3)
+    })
+
+    test('should manually run a watcher', () => {
+        const callback = jest.fn()
+        const count = state(0)
+        const ref = watch([count], callback)
+
+        // watch does not run on creation
+        expect(callback).toHaveBeenCalledTimes(0)
+
+        trigger(ref)
+        expect(callback).toHaveBeenCalledTimes(1)
+    })
+
+    test('should not run an effect after disposal', () => {
+        const mockEffect = jest.fn()
+        const ref = effect(mockEffect)
+
+        ref()
+        trigger(ref)
+        expect(mockEffect).toHaveBeenCalledTimes(1)
+    })
+})
+
+describe('watch', () => {
+    test('should not run the callback on creation', () => {
+        const count = state(0)
+        const callback = jest.fn()
+
+        watch([count], callback)
+        expect(callback).toHaveBeenCalledTimes(0)
+    })
+
+    test('should run the callback when a primitive dependency changes', () => {
+        const count = state(0)
+        const callback = jest.fn()
+
+        watch([count], callback)
+
+        count.value = 1
+        expect(callback).toHaveBeenCalledTimes(1)
+
+        count.set(2)
+        expect(callback).toHaveBeenCalledTimes(2)
+    })
+
+    test('should run the callback when an object dependency changes', () => {
+        const user = state({ name: 'John' })
+        const callback = jest.fn()
+
+        watch([user], callback)
+
+        user.name = 'Jane'
+        expect(callback).toHaveBeenCalledTimes(1)
+    })
+
+    test('should react to any of multiple dependencies', () => {
+        const a = state(0)
+        const b = state(0)
+        const callback = jest.fn()
+
+        watch([a, b], callback)
+
+        a.value = 1
+        expect(callback).toHaveBeenCalledTimes(1)
+
+        b.value = 1
+        expect(callback).toHaveBeenCalledTimes(2)
+    })
+
+    test('should not track reactive reads inside the callback', () => {
+        const dep = state(0)
+        const other = state(0)
+        const callback = jest.fn(() => other.value)
+
+        watch([dep], callback)
+
+        // changing a value only read inside the callback must not re-run it
+        other.value = 1
+        expect(callback).toHaveBeenCalledTimes(0)
+
+        dep.value = 1
+        expect(callback).toHaveBeenCalledTimes(1)
+    })
+
+    test('should run cleanup before re-running and on dispose', () => {
+        const count = state(0)
+        const cleanup = jest.fn()
+        const callback = jest.fn(() => cleanup)
+
+        const stop = watch([count], callback)
+
+        count.value = 1
+        expect(cleanup).toHaveBeenCalledTimes(0) // first callback run
+
+        count.value = 2
+        expect(cleanup).toHaveBeenCalledTimes(1) // before re-run
+
+        stop()
+        expect(cleanup).toHaveBeenCalledTimes(2) // on dispose
+    })
+
+    test('should stop reacting after disposal', () => {
+        const count = state(0)
+        const callback = jest.fn()
+
+        const stop = watch([count], callback)
+        count.value = 1
+        expect(callback).toHaveBeenCalledTimes(1)
+
+        stop()
+        count.value = 2
+        expect(callback).toHaveBeenCalledTimes(1)
     })
 })
 
@@ -459,17 +415,17 @@ describe('effect function', () => {
     })
 
     test('should run cleanup before re-running and on dispose', () => {
-        const count = signal(0)
+        const count = state(0)
         const cleanup = jest.fn()
 
         const dispose = effect(() => {
-            count()
+            count.value
             return cleanup
         })
 
         expect(cleanup).toHaveBeenCalledTimes(0)
 
-        count(1)
+        count.value = 1
         expect(cleanup).toHaveBeenCalledTimes(1) // before re-run
 
         dispose()
@@ -477,82 +433,82 @@ describe('effect function', () => {
     })
 
     test('should not re-run after disposal', () => {
-        const count = signal(0)
-        const mockEffect = jest.fn(() => count())
+        const count = state(0)
+        const mockEffect = jest.fn(() => count.value)
 
         const dispose = effect(mockEffect)
         expect(mockEffect).toHaveBeenCalledTimes(1)
 
         dispose()
-        count(1)
+        count.value = 1
         expect(mockEffect).toHaveBeenCalledTimes(1)
     })
 
     test('should clean up stale dependencies precisely', () => {
-        const toggle = signal(true)
-        const a = signal('a')
-        const b = signal('b')
-        const mockEffect = jest.fn(() => (toggle() ? a() : b()))
+        const toggle = state(true)
+        const a = state('a')
+        const b = state('b')
+        const mockEffect = jest.fn(() => (toggle.value ? a.value : b.value))
 
         effect(mockEffect)
         expect(mockEffect).toHaveBeenCalledTimes(1)
 
         // Currently depends on `a`, not `b`.
-        b('b2')
+        b.value = 'b2'
         expect(mockEffect).toHaveBeenCalledTimes(1)
 
-        a('a2')
+        a.value = 'a2'
         expect(mockEffect).toHaveBeenCalledTimes(2)
 
         // Switch dependency to `b`; `a` should no longer trigger.
-        toggle(false)
+        toggle.value = false
         expect(mockEffect).toHaveBeenCalledTimes(3)
 
-        a('a3')
+        a.value = 'a3'
         expect(mockEffect).toHaveBeenCalledTimes(3)
 
-        b('b3')
+        b.value = 'b3'
         expect(mockEffect).toHaveBeenCalledTimes(4)
     })
 
     test('should throw on an unbounded update loop', () => {
-        const count = signal(0)
+        const count = state(0)
         expect(() => {
             effect(() => {
-                count(count() + 1)
+                count.value = count.value + 1
             })
         }).toThrow(/Maximum effect update depth/)
     })
 
     test('should terminate a bounded self-updating effect', () => {
-        const count = signal(0)
+        const count = state(0)
         expect(() => {
             effect(() => {
-                if (count() < 3) count(count() + 1)
+                if (count.value < 3) count.value = count.value + 1
             })
         }).not.toThrow()
-        expect(count()).toBe(3)
+        expect(count.value).toBe(3)
     })
 
     test('should run pre, normal and post effects in order', () => {
-        const trigger = signal(0)
+        const dep = state(0)
         const order = []
 
         effect.pre(() => {
-            trigger()
+            dep.value
             order.push('pre')
         })
         effect(() => {
-            trigger()
+            dep.value
             order.push('normal')
         })
         effect.post(() => {
-            trigger()
+            dep.value
             order.push('post')
         })
 
         order.length = 0
-        trigger(1)
+        dep.value = 1
         expect(order).toEqual(['pre', 'normal', 'post'])
     })
 
@@ -570,8 +526,8 @@ describe('effect function', () => {
     })
 
     test('should isolate effects in a root scope and dispose them', () => {
-        const count = signal(0)
-        const mockEffect = jest.fn(() => count())
+        const count = state(0)
+        const mockEffect = jest.fn(() => count.value)
 
         let dispose
         effect.root(stop => {
@@ -581,63 +537,63 @@ describe('effect function', () => {
 
         expect(mockEffect).toHaveBeenCalledTimes(1)
 
-        count(1)
+        count.value = 1
         expect(mockEffect).toHaveBeenCalledTimes(2)
 
         dispose()
-        count(2)
+        count.value = 2
         expect(mockEffect).toHaveBeenCalledTimes(2)
     })
 
     test('should not subscribe to reads inside untrack', () => {
-        const count = signal(0)
-        const mockEffect = jest.fn(() => untrack(() => count()))
+        const count = state(0)
+        const mockEffect = jest.fn(() => untrack(() => count.value))
 
         effect(mockEffect)
         expect(mockEffect).toHaveBeenCalledTimes(1)
 
-        count(1)
+        count.value = 1
         expect(mockEffect).toHaveBeenCalledTimes(1)
     })
 
     test('should route errors to an onError boundary', () => {
-        const count = signal(0)
+        const count = state(0)
         const onError = jest.fn()
 
         effect(
             () => {
-                if (count() === 1) throw new Error('boom')
+                if (count.value === 1) throw new Error('boom')
             },
             { onError },
         )
 
         expect(onError).not.toHaveBeenCalled()
-        count(1)
+        count.value = 1
         expect(onError).toHaveBeenCalledTimes(1)
         expect(onError.mock.calls[0][0]).toBeInstanceOf(Error)
     })
 
     test('should run dependent effects once per batch', () => {
-        const a = signal(0)
-        const b = signal(0)
+        const a = state(0)
+        const b = state(0)
         const mockEffect = jest.fn(() => {
-            a()
-            b()
+            a.value
+            b.value
         })
 
         effect(mockEffect)
         expect(mockEffect).toHaveBeenCalledTimes(1)
 
         batch(() => {
-            a(1)
-            b(1)
+            a.value = 1
+            b.value = 1
         })
         expect(mockEffect).toHaveBeenCalledTimes(2)
     })
 
     test('should flush pending effects via tick', async () => {
-        const count = signal(0)
-        const mockEffect = jest.fn(() => count())
+        const count = state(0)
+        const mockEffect = jest.fn(() => count.value)
 
         effect(mockEffect)
         await tick()
