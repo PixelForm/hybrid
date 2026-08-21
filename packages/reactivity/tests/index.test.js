@@ -274,6 +274,32 @@ describe('derived state', () => {
         expect(double.value).toBe(6)
         expect(compute).toHaveBeenCalledTimes(2) // recomputed once
     })
+
+    test('should be writable, overriding the value until a dependency changes', () => {
+        const count = state(2)
+        const double = derived(() => count.value * 2)
+        const mockEffect = jest.fn(() => double.value)
+        effect(mockEffect)
+
+        double.value = 99
+        expect(double.value).toBe(99)
+        expect(mockEffect).toHaveBeenCalledTimes(2)
+
+        count.value = 3
+        expect(double.value).toBe(6) // dependency change discards the override
+        expect(mockEffect).toHaveBeenCalledTimes(3)
+    })
+
+    test('should update the override via set with a value or updater', () => {
+        const count = state(2)
+        const double = derived(() => count.value * 2)
+
+        double.set(10)
+        expect(double.value).toBe(10)
+
+        double.set(prev => prev + 1)
+        expect(double.value).toBe(11)
+    })
 })
 
 describe('async state', () => {
@@ -365,6 +391,61 @@ describe('async derived state', () => {
         await tick()
 
         expect(context).toEqual({ pending: true, error })
+    })
+
+    test('should be writable, overriding the value until a dependency changes', async () => {
+        const count = state(2)
+        const doubled = derivedAsync(() => count.value * 2)
+        let value
+
+        effect.async(() => {
+            value = doubled.value
+        })
+        await tick()
+        expect(value).toBe(4)
+
+        doubled.value = 99
+        expect(value).toBe(99)
+
+        count.value = 3
+        await tick()
+        expect(value).toBe(6) // dependency change discards the override
+    })
+
+    test('should ignore a stale in-flight recompute after an override', async () => {
+        const count = state(2)
+        const request = deferred()
+        const doubled = derivedAsync(() => {
+            count.value
+            return request.promise
+        })
+        let value
+
+        effect.async(() => {
+            value = doubled.value
+        })
+
+        doubled.value = 'override'
+        request.resolve('stale')
+        await tick()
+
+        expect(value).toBe('override')
+    })
+
+    test('should update the override via set with a value or updater', async () => {
+        const doubled = derivedAsync(() => 4)
+        let value
+
+        effect.async(() => {
+            value = doubled.value
+        })
+        await tick()
+
+        doubled.set(10)
+        expect(value).toBe(10)
+
+        doubled.set(prev => prev + 1)
+        expect(value).toBe(11)
     })
 })
 
