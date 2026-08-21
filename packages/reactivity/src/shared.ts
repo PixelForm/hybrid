@@ -238,13 +238,14 @@ export function withAsyncBoundary<T>(boundary: AsyncBoundary, fn: () => T): T {
 
 export function asyncContext(sources: Set<AsyncSource>): AsyncContext {
     let pending = false
+    let error: unknown | null = null
 
     for (const source of sources) {
-        if (source.status === 'rejected') return { pending: false, error: source.error }
+        if (source.status === 'rejected' && error === null) error = source.error
         if (source.status === 'pending') pending = true
     }
 
-    return { pending, error: null }
+    return { pending, error }
 }
 
 /**
@@ -452,10 +453,11 @@ function createAsyncEffect(fn: AsyncEffectFn, options?: EffectOptions): EffectRe
 
     return baseEffect(() => {
         let cleanup: void | Cleanup
+        const reaction = activeReaction as Reaction
 
         for (let iteration = 0; iteration < 3; iteration++) {
             const boundary: AsyncBoundary = { sources: new Set() }
-            cleanup = withAsyncBoundary(boundary, () => fn(context))
+            cleanup = withReaction(reaction, () => withAsyncBoundary(boundary, () => fn(context)))
             const next = asyncContext(boundary.sources)
 
             if (next.pending === context.pending && next.error === context.error) return cleanup
