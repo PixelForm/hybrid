@@ -195,9 +195,48 @@ export function derivedAsync<T>(fn: () => AsyncInput<T>): AsyncState<T> {
         return asyncSource.status === 'resolved' ? value : undefined
     }
 
-    return {
-        get value() {
-            return read()
+    // Writing is a temporary override, discarded once a dependency change marks
+    // this stale again and `evaluate` recomputes it (Svelte 5 `$derived` semantics).
+    function write(next: AsyncInput<T> | undefined): void {
+        const current = ++version
+        stale = false
+
+        if (!isPromiseLike(next)) {
+            value = reactiveValue(next as T)
+            asyncSource.status = 'resolved'
+            asyncSource.error = null
+            effectRunner(asyncSource.subscriptions)
+            return
+        }
+
+        value = undefined
+        asyncSource.status = 'pending'
+        asyncSource.error = null
+        effectRunner(asyncSource.subscriptions)
+
+        Promise.resolve(next).then(
+            resolved => {
+                if (current !== version) return
+                value = reactiveValue(resolved)
+                asyncSource.status = 'resolved'
+                effectRunner(asyncSource.subscriptions)
+            },
+            error => {
+                if (current !== version) return
+                asyncSource.error = error
+                asyncSource.status = 'rejected'
+                effectRunner(asyncSource.subscriptions)
+            },
+        )
+    }
+
+    const state = {
+        set(next: AsyncInput<T> | ((previous: T | undefined) => AsyncInput<T>)) {
+            write(
+                typeof next === 'function'
+                    ? (next as (previous: T | undefined) => AsyncInput<T>)(read())
+                    : next,
+            )
         },
         valueOf() {
             return read()
@@ -205,5 +244,13 @@ export function derivedAsync<T>(fn: () => AsyncInput<T>): AsyncState<T> {
         toString() {
             return String(read())
         },
-    }
+    } as AsyncState<T>
+
+    Object.defineProperty(state, 'value', {
+        get: read,
+        set: write,
+        enumerable: true,
+    })
+
+    return state
 }
