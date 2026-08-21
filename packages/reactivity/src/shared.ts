@@ -125,6 +125,23 @@ export interface EffectOptions {
     onError?: (error: unknown) => void
 }
 
+export interface AsyncContext {
+    pending: boolean
+    error: unknown | null
+}
+
+export type AsyncEffectFn = (context: AsyncContext) => void | Cleanup
+
+export interface AsyncSource {
+    status: 'pending' | 'resolved' | 'rejected'
+    error: unknown | null
+    subscriptions: Subscribers
+}
+
+interface AsyncBoundary {
+    sources: Set<AsyncSource>
+}
+
 /** Flush queue identifiers, ordered by priority (lowest runs first). */
 const QUEUE_PRE = 0
 const QUEUE_NORMAL = 1
@@ -169,6 +186,8 @@ const noop: Noop = () => {}
 /** The reaction currently being tracked, if any. */
 export let activeReaction: Reaction | null = null
 
+let activeBoundary: AsyncBoundary | null = null
+
 /** Whether reads should register dependencies on the active reaction. */
 let shouldTrack = true
 
@@ -195,6 +214,37 @@ export function effectSetup(subscriptions: Subscribers) {
         subscriptions.add(activeReaction)
         activeReaction.deps.add(subscriptions)
     }
+}
+
+export function registerAsyncRead(source: AsyncSource): void {
+    if (!activeBoundary) {
+        throw new Error('Async values can only be read inside effect.async or derivedAsync.')
+    }
+
+    activeBoundary.sources.add(source)
+    effectSetup(source.subscriptions)
+}
+
+export function withAsyncBoundary<T>(boundary: AsyncBoundary, fn: () => T): T {
+    const previous = activeBoundary
+    activeBoundary = boundary
+
+    try {
+        return fn()
+    } finally {
+        activeBoundary = previous
+    }
+}
+
+export function asyncContext(sources: Set<AsyncSource>): AsyncContext {
+    let pending = false
+
+    for (const source of sources) {
+        if (source.status === 'rejected') return { pending: false, error: source.error }
+        if (source.status === 'pending') pending = true
+    }
+
+    return { pending, error: null }
 }
 
 /**
@@ -397,6 +447,27 @@ function createEffect(queue: Queue) {
     }
 }
 
+function createAsyncEffect(fn: AsyncEffectFn, options?: EffectOptions): EffectRef {
+    let context: AsyncContext = { pending: false, error: null }
+
+    return baseEffect(() => {
+        let cleanup: void | Cleanup
+
+        for (let iteration = 0; iteration < 3; iteration++) {
+            const boundary: AsyncBoundary = { sources: new Set() }
+            cleanup = withAsyncBoundary(boundary, () => fn(context))
+            const next = asyncContext(boundary.sources)
+
+            if (next.pending === context.pending && next.error === context.error) return cleanup
+
+            if (cleanup) cleanup()
+            context = next
+        }
+
+        throw new Error('Async effect state did not stabilize.')
+    }, options)
+}
+
 const baseEffect = createEffect(QUEUE_NORMAL)
 
 /**
@@ -510,6 +581,7 @@ function tracking(): boolean {
 export const effect = Object.assign(baseEffect, {
     pre: createEffect(QUEUE_PRE),
     post: createEffect(QUEUE_POST),
+    async: createAsyncEffect,
     root,
     tracking,
 })
