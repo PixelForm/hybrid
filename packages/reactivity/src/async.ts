@@ -114,7 +114,7 @@ export function stateAsync<T>(source: AsyncInput<T>): AsyncState<T> {
     return state
 }
 
-export function derivedAsync<T>(fn: () => AsyncInput<T>): ReadonlyAsyncState<T> {
+export function derivedAsync<T>(fn: () => AsyncInput<T>): AsyncState<T> {
     const asyncSource = createSource()
     let value: T | undefined
     let stale = true
