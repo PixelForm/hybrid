@@ -20,8 +20,19 @@
  * SOFTWARE.
  */
 
-export * from './state'
-export * from './derived'
-export * from './snapshot'
+export { state } from './state'
+export type { ReactiveState, WritableState } from './state'
+export { derived } from './derived'
+export { stateAsync, derivedAsync } from './async'
+export type { AsyncInput, AsyncState, ReadonlyAsyncState } from './async'
+export { snapshot } from './snapshot'
 export { effect, watch, trigger, untrack, batch, flush, tick } from './shared'
-export type { Cleanup, EffectFn, EffectOptions, EffectRef } from './shared'
+export type {
+    AsyncContext,
+    AsyncEffectFn,
+    Cleanup,
+    EffectFn,
+    EffectOptions,
+    EffectRef,
+    ReactiveObject,
+} from './shared'
