@@ -1,10 +1,6 @@
 > [!WARNING]
 > This package is in active development! Expect breaking changes!
 
-# Upcoming: Version 1!
-
-I am proud to announce the work in progress for version 1. This version will include all necessary tools and functions for you to build a fully functional reactive framework! This version will also be having some breaking changes. Most functionality will continue to work for now but will be deprecated/change once version 1 is released.
-
 # Reactivity
 
 A simple lightweight reactivity library. Framework agnostic and unoppinionated.
@@ -43,41 +39,10 @@ yarn add @pixelform/reactivity@next
 pnpm add @pixelform/reactivity@next
 ```
 
-## Breaking changes in v1
+## Core API
 
-Pre v1, state was declared using a state function which created a signal. Since this naming doesn't quite make much sense there will now be a `signal` function to create signals. The state function has been repurposed to create a proxy state similar to Vue's `ref` function. You can choose which function you use, both doing pretty much the same but having different developer experiences. You can use the same effect function for both `signal` and `state` functions.
-
-`state` function becomes `signal` function:
-
-```diff
-- import { state, effect } from '@pixelform/reactivity'
-+ import { signal, effect } from '@pixelform/reactivity'
-
-- let count = state(0)
-+ let count = signal(0)
-
-effect(() => {
-    console.log(count())
-})
-```
-
-The new `state` function could be used for deeply reactive objects:
-
-```diff
-import { state, effect } from '@pixelform/reactivity'
-
-let data = state({
-    count: 0
-})
-
-- data({ count: data().count + 1 })
-+ data.count++
-
-effect(() => {
--    console.log(data().count)
-+    console.log(data.count)
-})
-```
+The primary API consists of `state`, `effect`, `derived`, `stateAsync`, and
+`derivedAsync`.
 
 State created with `state` is **deeply** reactive. Nested objects and arrays are
 reactive too, properties added later are tracked, and array mutations trigger
@@ -113,17 +78,15 @@ effect(() => {
 })
 ```
 
-## Features in Version 1
-
-Signal state is now deep merged which makes updating easier:
+Object state is deeply merged when updated with `set`:
 
 ```javascript
-const user = signal({
+const user = state({
     details: { name: 'John Doe', age: 31 },
     preferences: { theme: 'light' },
 })
 
-user({ details: { age: 34 } })
+user.set({ details: { age: 34 } })
 
 effect(() => {
     console.log(user())
@@ -139,18 +102,6 @@ effect(() => {
             }
         }
     */
-})
-```
-
-Promised based reactivity:
-
-```javascript
-import { promised } from '@pixelform/reactivity'
-
-const user = promised(Promise.resolve(5))
-
-effect(() => {
-    console.log(user.result) // 5
 })
 ```
 
@@ -172,26 +123,25 @@ count.value = 5 // marks stale; double.value recomputes to 10 on next read
 count.value = 5 // unchanged: cached value is reused, no recomputation
 ```
 
-`promised` creates a deeply reactive state that reacts to a promise. `pending`
-starts `true` and flips to `false` once the promise settles, filling `result` or
-`error`. Pass a function returning a promise to make the source reactive: it
-re-runs whenever its dependencies change, ignores stale results from superseded
-runs (preventing race conditions), and exposes a `reload()` method:
+`stateAsync` holds a value or promise. Its resolved `.value` can only be read
+inside `effect.async` or `derivedAsync`; before resolution it is `undefined`.
+`effect.async` receives the aggregate pending and error state of every async
+value read by its body:
 
 ```javascript
-import { state, promised, effect } from '@pixelform/reactivity'
+import { stateAsync, derivedAsync, effect } from '@pixelform/reactivity'
 
-const query = state('a')
-const search = promised(() => fetch(`/api?q=${query.value}`).then(res => res.json()))
+const user = stateAsync(fetch('/api/user').then(response => response.json()))
+const name = derivedAsync(() => user.value?.name)
 
-effect(() => {
-    if (search.pending) return console.log('loading…')
-    if (search.error) return console.log('failed:', search.error)
-    console.log(search.result) // deeply reactive once resolved
+effect.async(({ pending, error }) => {
+    const value = name.value
+    if (pending) return console.log('loading...')
+    if (error) return console.error(error)
+    console.log(value)
 })
 
-query.value = 'b' // triggers a new request; the stale one is ignored
-search.reload() // manually re-run the source
+user.value = fetch('/api/user/2').then(response => response.json())
 ```
 
 `snapshot` creates a plain, non-reactive deep clone, handy for logging or
@@ -220,16 +170,16 @@ return a cleanup function, which runs before each re-run and when the effect is
 stopped. Calling the value returned by `effect` disposes it:
 
 ```javascript
-import { signal, effect } from '@pixelform/reactivity'
+import { state, effect } from '@pixelform/reactivity'
 
-const count = signal(0)
+const count = state(0)
 
 const dispose = effect(() => {
-    console.log(count())
+    console.log(count.value)
     return () => console.log('cleanup') // runs before re-run and on dispose
 })
 
-count(1) // logs: cleanup, then 1
+count.value = 1 // logs: cleanup, then 1
 dispose() // logs: cleanup; the effect no longer runs
 ```
 
@@ -277,19 +227,19 @@ effect(
 scheduling:
 
 ```javascript
-import { signal, effect, untrack, batch, tick } from '@pixelform/reactivity'
+import { state, effect, untrack, batch, tick } from '@pixelform/reactivity'
 
-const a = signal(0)
-const b = signal(0)
+const a = state(0)
+const b = state(0)
 
 effect(() => {
-    a() // tracked
-    untrack(() => b()) // read without subscribing
+    a.value // tracked
+    untrack(() => b.value) // read without subscribing
 })
 
 batch(() => {
-    a(1)
-    b(1) // dependent effects run once, after the batch
+    a.value = 1
+    b.value = 1 // dependent effects run once, after the batch
 })
 
 await tick() // resolves once pending effects have flushed
