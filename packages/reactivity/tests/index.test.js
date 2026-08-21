@@ -7,9 +7,21 @@ const {
     flush,
     tick,
     derived,
+    stateAsync,
+    derivedAsync,
     snapshot,
     trigger,
 } = require('../dist/index.js')
+
+function deferred() {
+    let resolve
+    let reject
+    const promise = new Promise((resolvePromise, rejectPromise) => {
+        resolve = resolvePromise
+        reject = rejectPromise
+    })
+    return { promise, resolve, reject }
+}
 
 describe('state function', () => {
     test('should initialize state with a given value', () => {
@@ -261,6 +273,98 @@ describe('derived state', () => {
         count.value = 3
         expect(double.value).toBe(6)
         expect(compute).toHaveBeenCalledTimes(2) // recomputed once
+    })
+})
+
+describe('async state', () => {
+    test('should expose resolved values through effect.async', async () => {
+        const request = deferred()
+        const result = stateAsync(request.promise)
+        const observed = []
+
+        effect.async(context => {
+            observed.push({ ...context, value: result.value })
+        })
+
+        expect(observed.at(-1)).toEqual({ pending: true, error: null, value: undefined })
+
+        request.resolve(5)
+        await tick()
+
+        expect(observed.at(-1)).toEqual({ pending: false, error: null, value: 5 })
+    })
+
+    test('should reject reads outside an async boundary', () => {
+        const result = stateAsync(5)
+        expect(() => result.value).toThrow(/effect\.async or derivedAsync/)
+    })
+
+    test('should be writable and ignore stale promise results', async () => {
+        const first = deferred()
+        const second = deferred()
+        const result = stateAsync(first.promise)
+        let value
+
+        effect.async(() => {
+            value = result.value
+        })
+
+        result.value = second.promise
+        first.resolve('stale')
+        second.resolve('current')
+        await tick()
+
+        expect(value).toBe('current')
+
+        result.set(previous => `${previous}!`)
+        expect(value).toBe('current!')
+    })
+})
+
+describe('async derived state', () => {
+    test('should propagate async dependencies without a context argument', async () => {
+        const request = deferred()
+        const source = stateAsync(request.promise)
+        const compute = jest.fn(() => source.value * 2)
+        const doubled = derivedAsync(compute)
+        const quadrupled = derivedAsync(() => doubled.value * 2)
+        let context
+        let value
+
+        effect.async(current => {
+            context = current
+            value = quadrupled.value
+        })
+
+        expect(compute.mock.calls[0]).toEqual([])
+        expect(context).toEqual({ pending: true, error: null })
+        expect(value).toBeUndefined()
+
+        request.resolve(4)
+        await tick()
+
+        expect(context).toEqual({ pending: false, error: null })
+        expect(value).toBe(16)
+    })
+
+    test('should aggregate pending and errors across async reads', async () => {
+        const pendingRequest = deferred()
+        const failedRequest = deferred()
+        const pending = stateAsync(pendingRequest.promise)
+        const failed = stateAsync(failedRequest.promise)
+        let context
+
+        effect.async(current => {
+            context = current
+            pending.value
+            failed.value
+        })
+
+        const error = new Error('failed')
+        failedRequest.reject(error)
+        await tick()
+
+        expect(context).toEqual({ pending: true, error })
     })
 })
 
