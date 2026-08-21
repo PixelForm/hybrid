@@ -234,7 +234,7 @@ export function derivedAsync<T>(fn: () => AsyncInput<T>): AsyncState<T> {
         set(next: AsyncInput<T> | ((previous: T | undefined) => AsyncInput<T>)) {
             write(
                 typeof next === 'function'
-                    ? (next as (previous: T | undefined) => AsyncInput<T>)(read())
+                    ? (next as (previous: T | undefined) => AsyncInput<T>)(value)
                     : next,
             )
         },
